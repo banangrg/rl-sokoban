@@ -21,9 +21,16 @@ def generate_example_map():
         example_map.append(middle_row.copy())
 
     example_map.append(top_row.copy())
-    example_map[4][8] = BlockType.PLAYER
+    example_map[5][5] = BlockType.PLAYER
+
+    add_some_walls(example_map)
 
     return example_map
+
+def add_some_walls(example_map):
+    example_map[3][2] = BlockType.WALL
+    example_map[5][7] = BlockType.WALL
+    example_map[8][4] = BlockType.WALL
 
 
 def draw_map(map):
