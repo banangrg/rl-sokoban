@@ -1,0 +1,4 @@
+levels/simplest_possible_level.txt
+A
+8.0;30.0
+38.0
