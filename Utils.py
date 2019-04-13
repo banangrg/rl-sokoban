@@ -24,8 +24,8 @@ def generate_example_map():
     example_map[5][5] = BlockType.PLAYER
 
     add_some_walls(example_map)
-    example_map[4][7] = BlockType.CHEST
-    # example_map[2][2] = BlockType.GOAL
+    example_map[2][3] = BlockType.CHEST
+    example_map[2][2] = BlockType.GOAL
 
     return example_map
 

@@ -12,13 +12,18 @@ class SobokanGame(arcade.Window):
         self.game_map = game_map
         self.player_position = self.find_block_of_type(BlockType.PLAYER)
         self.goal_position = self.find_block_of_type(BlockType.GOAL)
+        self.game_over = False
         arcade.set_background_color(cs.BACKGROUND_COLOR)
 
     def on_draw(self):
         arcade.start_render()
         self.draw_map()
+        if self.game_over:
+            self.draw_game_over()
 
     def on_key_press(self, key, modifiers):
+        if self.game_over:
+            return
         if key == arcade.key.LEFT:
             print("left")
             movement_array = [-1, 0]
@@ -40,9 +45,13 @@ class SobokanGame(arcade.Window):
             if self.get_field_type(after_chest_field) == BlockType.CHEST or self.get_field_type(
                     after_chest_field) == BlockType.WALL:
                 return
+            elif self.get_field_type(after_chest_field) == BlockType.GOAL:
+                self.move_player_and_chest(chest_field, movement_array)
+                print("Success")
+                self.game_over = True
+                return
             else:
                 self.move_player_and_chest(chest_field, movement_array)
-                return
         else:
             self.move_player(movement_array)
 
@@ -79,4 +88,9 @@ class SobokanGame(arcade.Window):
         self.move_player(movement_array)
         chest_field = self.get_field_after(chest_field, movement_array)
         self.game_map[chest_field[0]][chest_field[1]] = BlockType.CHEST
-        # self.game_map[7][8] = BlockType.GOAL
+
+    def draw_game_over(self):
+        output = "Success"
+        x = cs.WINDOW_WIDTH / 2 - 24
+        y = cs.FIELD_HEIGHT / 2
+        arcade.draw_text(output, 0, 0, arcade.color.PINK, 24)
