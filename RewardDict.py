@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 class RewardDict:
     SIMPLE_MOVE = -0.05
     BOX_ON_TARGET = 8.0

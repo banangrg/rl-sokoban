@@ -1,10 +1,10 @@
+from operator import add
+
 import arcade
 
 import SobParams as cs
-from BlockType import BlockType
 import Utils
-from operator import add
-
+from BlockType import BlockType
 from RecordSaver import RecordSaver
 from RewardDict import RewardDict
 

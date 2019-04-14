@@ -1,0 +1,4 @@
+manual_games/simple_level_3
+L;U;L;U;L;U;L;U;L;U;L;R;U;L;U;L;U;L;U;L;U;L;U;L;U;L;U;L;L
+;;;;;8.0;;;;;;;;;;;;;;;8.0;30.0
+45.050000000000004

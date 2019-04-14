@@ -1,5 +1,6 @@
-import arcade
 import sys
+
+import arcade
 
 import SobParams as cs
 from BlockType import BlockType
@@ -48,8 +49,8 @@ def draw_map(map):
     return player_position
 
 
-def get_level_path(argv):
-    level_path = cs.PATH_TO_LEVELS
+def get_level_name(argv):
+    level_path = ""
     if len(argv) > 1:
         level_path += argv[1]
         if argv[1] == '-h' or argv[1] == '--help':
@@ -59,6 +60,17 @@ def get_level_path(argv):
     else:
         level_path += cs.DEFAULT_LEVEL
     return level_path
+
+
+def get_level_path(argv):
+    level_path = cs.PATH_TO_LEVELS
+    level_name = get_level_name(argv)
+    return level_path + level_name
+
+def get_record_path(argv):
+    record_path = cs.PATH_TO_MANUAL_GAMES
+    level_name = get_level_name(argv)
+    return record_path + level_name
 
 
 def read_map_from_file_path(file_path):
