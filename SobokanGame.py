@@ -1,8 +1,12 @@
 import arcade
+
 import SobParams as cs
 from BlockType import BlockType
 import Utils
 from operator import add
+
+from RecordSaver import RecordSaver
+from RewardDict import RewardDict
 
 
 class SobokanGame(arcade.Window):
@@ -13,8 +17,10 @@ class SobokanGame(arcade.Window):
         self.player_position = self.find_block_of_type(BlockType.PLAYER)
         self.goals_left = self.calculate_num_of_block_of_type(BlockType.GOAL)
         self.is_player_on_goal = False
-        # self.goal_position = self.find_block_of_type(BlockType.GOAL)
         self.game_over = False
+        self.moves = []
+        self.record_saved = False
+        self.rewards = []
         arcade.set_background_color(cs.BACKGROUND_COLOR)
 
     def on_draw(self):
@@ -22,6 +28,11 @@ class SobokanGame(arcade.Window):
         self.draw_map()
         if self.game_over:
             self.draw_game_over()
+            if not self.record_saved:
+                RecordSaver.moves = self.moves
+                RecordSaver.rewards = self.rewards
+                RecordSaver.write_record()
+                self.record_saved = True
 
     def on_key_press(self, key, modifiers):
         if self.game_over:
@@ -29,17 +40,22 @@ class SobokanGame(arcade.Window):
         if key == arcade.key.LEFT:
             print("left")
             movement_array = [-1, 0]
+            self.moves.append("L")
         elif key == arcade.key.RIGHT:
             print("right")
             movement_array = [1, 0]
+            self.moves.append("R")
         elif key == arcade.key.UP:
             print("up")
             movement_array = [0, 1]
         elif key == arcade.key.DOWN:
+            self.moves.append("U")
             print("down")
             movement_array = [0, -1]
+            self.moves.append("L")
 
         if self.get_player_next_field_type(movement_array) == BlockType.WALL:
+            self.rewards.append(RewardDict.INVALID_MOVE)
             return
         elif self.get_player_next_field_type(movement_array) == BlockType.CHEST or self.get_player_next_field_type(
                 movement_array) == BlockType.CHEST_ON_GOAL:
@@ -50,20 +66,33 @@ class SobokanGame(arcade.Window):
                 is_chest_on_goal = True
             if self.get_field_type(after_chest_field) == BlockType.CHEST or self.get_field_type(
                     after_chest_field) == BlockType.WALL:
+                self.rewards.append(RewardDict.INVALID_MOVE)
                 return
             elif self.get_field_type(after_chest_field) == BlockType.GOAL:
+
                 self.move_player_and_chest(chest_field, movement_array, is_chest_on_goal, is_goal_next=True)
                 self.goals_left -= 1
+                self.rewards.append(RewardDict.BOX_ON_TARGET)
                 if self.goals_left == 0:
                     print("Success")
                     self.game_over = True
-                return
+                    self.rewards.append(RewardDict.VICTORY)
             else:
                 self.move_player_and_chest(chest_field, movement_array, is_chest_on_goal)
+                if is_chest_on_goal:
+                    self.rewards.append(RewardDict.BOX_OFF_TARGET)
+                else:
+                    self.rewards.append(RewardDict.SIMPLE_MOVE)
         elif self.get_player_next_field_type(movement_array) == BlockType.GOAL:
             self.move_player(movement_array, is_goal_next=True)
+            self.rewards.append(RewardDict.SIMPLE_MOVE)
         else:
             self.move_player(movement_array)
+            self.rewards.append(RewardDict.SIMPLE_MOVE)
+
+        if len(self.rewards) > cs.MOVE_TIMEOUT:
+            self.game_over = True
+            self.rewards.append(RewardDict.LOSS)
 
     def draw_map(self):
         for i in range(len(self.game_map)):
@@ -88,7 +117,7 @@ class SobokanGame(arcade.Window):
         return list(map(add, self.player_position, movement_array))
 
     def move_player(self, movement_array, is_goal_next=False):
-        if self.is_player_on_goal == True:
+        if self.is_player_on_goal:
             self.game_map[self.player_position[0]][self.player_position[1]] = BlockType.GOAL
             self.is_player_on_goal = False
         else:
@@ -121,7 +150,8 @@ class SobokanGame(arcade.Window):
             self.game_map[chest_field[0]][chest_field[1]] = BlockType.CHEST
 
     def draw_game_over(self):
-        output = "Success"
-        x = cs.WINDOW_WIDTH / 2 - 24
-        y = cs.FIELD_HEIGHT / 2
+        if len(self.rewards) > cs.MOVE_TIMEOUT:
+            output = "Failure"
+        else:
+            output = "Success"
         arcade.draw_text(output, 0, 0, arcade.color.PINK, 24)
