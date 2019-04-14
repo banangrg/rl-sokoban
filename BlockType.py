@@ -8,6 +8,8 @@ class BlockType(Enum):
     CHEST = '$'
     GOAL = '.'
     PLAYER = '@'
+    CHEST_ON_GOAL = '*'
+    PLAYER_ON_GOAL = '+'
 
     def get_color(self):
         return {
@@ -16,4 +18,6 @@ class BlockType(Enum):
             BlockType.CHEST: arcade.color.LIGHT_BROWN,
             BlockType.GOAL: arcade.color.GREEN,
             BlockType.PLAYER: arcade.color.RED,
+            BlockType.CHEST_ON_GOAL: arcade.color.PURPLE,
+            BlockType.PLAYER_ON_GOAL: arcade.color.PINK
         }[self]

@@ -67,7 +67,6 @@ def read_map_from_file_path(file_path):
         for line in map_file:
             line = line.replace('\n', '')
             lines.append(list(line))
-    print(lines)
     return lines
 
 
