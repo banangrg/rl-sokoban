@@ -3,11 +3,11 @@ import arcade
 
 
 class BlockType(Enum):
-    EMPTY = 0
-    WALL = 1
-    CHEST = 2
-    GOAL = 3
-    PLAYER = 4
+    EMPTY = ' '
+    WALL = '#'
+    CHEST = '$'
+    GOAL = '.'
+    PLAYER = '@'
 
     def get_color(self):
         return {

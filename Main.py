@@ -1,21 +1,19 @@
 import arcade
+import sys
 
-import Constants as cs
-import BlockType
-from SobokanGame import SobokanGame
+import SobParams as cs
 import Utils
+from SobokanGame import SobokanGame
 
 player_position = []
 game_map = Utils.generate_example_map()
 
-
-# def main():
-#
-#     arcade.finish_render()
-#     arcade.run()
-
-
 if __name__ == "__main__":
-    print('Hello')
+    level_path = Utils.get_level_path(sys.argv)
+    game_map = Utils.read_map_from_file_path(level_path)
+    Utils.set_width_and_height(game_map)
     window = SobokanGame(cs.WINDOW_WIDTH, cs.WINDOW_HEIGHT, cs.TITLE, game_map)
     arcade.run()
+
+
+

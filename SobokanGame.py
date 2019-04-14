@@ -1,5 +1,5 @@
 import arcade
-import Constants as cs
+import SobParams as cs
 from BlockType import BlockType
 import Utils
 from operator import add
