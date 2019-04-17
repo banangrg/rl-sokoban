@@ -541,4 +541,4 @@ if __name__ == "__main__":
     else:
         level_path += "simple_level_3.txt"
     manual_sokoban = ManualPlaySokoban()
-    manual_sokoban.sokoban_manual_play(level_path, use_wsad=True, map_rotation=SokobanGame.MAP_ROTATION_180)
+    manual_sokoban.sokoban_manual_play(level_path, use_wsad=True, map_rotation=SokobanGame.MAP_ROTATION_NONE)
