@@ -72,6 +72,11 @@ class SokobanGame:
 
     DEFAULT_TIMEOUT = 200   # max number of moves before game ends with loss
 
+    MAP_ROTATION_NONE = 0
+    MAP_ROTATION_90 = 1
+    MAP_ROTATION_180 = 2
+    MAP_ROTATION_270 = 3
+
     PATH_TO_LEVELS = 'levels/'
     PATH_TO_MANUAL_GAMES = 'manual_games/'
 
@@ -85,8 +90,10 @@ class SokobanGame:
     game_timeout = None
     path_to_current_level = None
     is_manual = None
+    map_rotation = None
 
-    def __init__(self, path_to_level: str, reward_impl: AbstractRewardSystem, loss_timeout: int = DEFAULT_TIMEOUT, manual_play: bool = True):
+    def __init__(self, path_to_level: str, reward_impl: AbstractRewardSystem, loss_timeout: int = DEFAULT_TIMEOUT,
+                 manual_play: bool = True, map_rotation: int = MAP_ROTATION_NONE):
         """ Initializes single game. Requires path to file with level and a reward system (ex. basic RewardSystem()).
             Does basic validation of loaded level."""
         self.load_level(path_to_level)
@@ -99,6 +106,11 @@ class SokobanGame:
         self.game_timeout = loss_timeout
         self.path_to_current_level = path_to_level
         self.is_manual = manual_play
+        if map_rotation not in [self.MAP_ROTATION_NONE, self.MAP_ROTATION_90, self.MAP_ROTATION_180, self.MAP_ROTATION_270]:
+            raise Exception("Invalid map rotation option!")
+        self.map_rotation = map_rotation
+        # rotate map according to setting
+        self.current_level = np.rot90(self.current_level, k=map_rotation)
 
     @staticmethod
     def get_level(filepath: str):
@@ -221,23 +233,9 @@ class SokobanGame:
         return self.position_check(player_row, player_col + 1, player_row, player_col + 2)
 
     # ------------------ move handlers -------------------------------------------------------------------------------------------------------------------------------------
-    def swap_elements(self, from_row: int, from_col: int, to_row: int, to_col: int):
-        """ swap two symbols in current level, does NOT provide checking if move is valid """
-        self.current_level[from_row, from_col], self.current_level[to_row, to_col] = self.current_level[to_row, to_col], self.current_level[from_row, from_col]
-
     def put_specified_element_on_target(self, row: int, col: int, element_to_put: str):
         """ changes target row,col to specified element, does NOT provide checking if move is valid """
         self.current_level[row, col] = element_to_put
-
-    def move_element_to_free_space(self, from_row: int, from_col: int, to_row: int, to_col: int):
-        """ moves element to specified row,col putting free space in old position,
-            does NOT provide checking if move is valid """
-        self.current_level[to_row, to_col] = self.current_level[from_row, from_col]
-        self.current_level[from_row, from_col] = self.FREE_SPACE
-
-    def move_player_from_target(self, from_row: int, from_col: int, to_row: int, to_col: int):
-        self.put_specified_element_on_target(to_row, to_col, self.PLAYER)  # player where player_on_target_was
-        self.put_specified_element_on_target(from_row, from_col, self.TARGET)  # target where free_space was
 
     def move_internal(self, player_pos_row: int, player_pos_col: int, pos_one_row: int, pos_one_col: int,
                       pos_two_row: int, pos_two_col: int):
@@ -302,8 +300,7 @@ class SokobanGame:
         else:
             reward = self.reward_system.get_reward_for_move()
 
-        self.total_reward += reward
-        self.rewards_received.append(reward)
+        self.add_reward_to_game_memory(reward)
         return reward
 
     def handle_invalid_move(self, do_print_message: bool = False):
@@ -360,6 +357,7 @@ class SokobanGame:
         line 2: moves made - separated by chosen separator (default ;) \n
         line 3: rewards received - separated by chosen separator (default ;) \n
         line 4: total reward received
+        line 5: map rotation option - 0 = none, 1 - 90, 2 - 180, 3 - 270
         """
         current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = self.PATH_TO_MANUAL_GAMES + filename + current_date + "." + file_extension
@@ -378,7 +376,8 @@ class SokobanGame:
             f.write(self.path_to_current_level + "\n")
             f.write(moves_str + "\n")
             f.write(rewards_str + "\n")
-            f.write(str(self.total_reward))
+            f.write(str(self.total_reward) + "\n")
+            f.write(str(self.map_rotation))
 
     def check_and_process_game_end(self):
         """ To be called after making move, returns True if game is over, False if it is not and returns final reward - 0 if not game over yet  """
@@ -393,27 +392,52 @@ class SokobanGame:
         else:
             return False, 0
 
+    def add_reward_to_game_memory(self, reward: int):
+        self.total_reward += reward
+        self.rewards_received.append(reward)
+
     def is_victory(self, only_check: bool = False):
         remaining_boxes = (self.current_level == self.BOX).sum()
         if remaining_boxes == 0:
             reward_for_victory = self.reward_system.get_reward_for_victory()
             if not only_check:
-                self.total_reward += reward_for_victory
-                self.rewards_received.append(reward_for_victory)
+                self.add_reward_to_game_memory(reward_for_victory)
             return True, reward_for_victory
         else:
             return False, 0
 
     def is_loss(self, only_check: bool = False):
         remaining_boxes = (self.current_level == self.BOX).sum()
+        reward_for_loss = self.reward_system.get_reward_for_loss()
         if self.move_counter >= self.game_timeout and remaining_boxes > 0:
-            reward_for_loss = self.reward_system.get_reward_for_loss()
             if not only_check:
-                self.total_reward += reward_for_loss
-                self.rewards_received.append(reward_for_loss)
+                self.add_reward_to_game_memory(reward_for_loss)
+            return True, reward_for_loss
+        elif self.is_at_least_one_box_blocked():
+            if not only_check:
+                self.add_reward_to_game_memory(reward_for_loss)
             return True, reward_for_loss
         else:
             return False, 0
+
+    def is_at_least_one_box_blocked(self):
+        boxes_positions = np.where(self.current_level == self.BOX)  # no need to check box_on_target, they can be blocked
+        boxes_pos_rows = boxes_positions[0]
+        boxes_pos_cols = boxes_positions[1]
+        for ind in range(len(boxes_pos_rows)):
+            if self.is_box_in_position_blocked(boxes_pos_rows[ind], boxes_pos_cols[ind]):
+                return True
+        return False
+
+    def is_box_in_position_blocked(self, box_row: int, box_col: int):
+        element_left = self.current_level[box_row, box_col - 1]
+        element_right = self.current_level[box_row, box_col + 1]
+        element_up = self.current_level[box_row - 1, box_col]
+        element_down = self.current_level[box_row + 1, box_col]
+        if (element_up == self.WALL or element_down == self.WALL) and (element_left == self.WALL or element_right == self.WALL):
+            return True
+        else:
+            return False
 
 
 class ManualPlaySokoban:
@@ -444,11 +468,12 @@ class ManualPlaySokoban:
         except AttributeError:
             pass
 
-    def sokoban_manual_play(self, level_name: str = SokobanGame.PATH_TO_LEVELS + "simple_level_2.txt", use_wsad: bool = False):
+    def sokoban_manual_play(self, level_name: str = SokobanGame.PATH_TO_LEVELS + "simple_level_2.txt", use_wsad: bool = False, map_rotation: int = 0):
         if use_wsad:
             SokobanGame.change_controls()
         rew_impl = RewardSystem()
-        game = SokobanGame(level_name, rew_impl, loss_timeout=SokobanGame.DEFAULT_TIMEOUT, manual_play=True)
+        game = SokobanGame(level_name, rew_impl, loss_timeout=SokobanGame.DEFAULT_TIMEOUT, manual_play=True,
+                           map_rotation=map_rotation)
         continue_game = True
         SokobanGame.print_rules()
         print("Use 'exit' to end the game, 'rules' to print game rules")
@@ -516,4 +541,4 @@ if __name__ == "__main__":
     else:
         level_path += "simple_level_3.txt"
     manual_sokoban = ManualPlaySokoban()
-    manual_sokoban.sokoban_manual_play(level_path, use_wsad=True)
+    manual_sokoban.sokoban_manual_play(level_path, use_wsad=True, map_rotation=SokobanGame.MAP_ROTATION_NONE)
