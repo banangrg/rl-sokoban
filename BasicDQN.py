@@ -142,6 +142,7 @@ print("Done saving dqn weights")
 
 plt.plot(training_history.history['episode_reward'])
 plt.plot(training_history.history['nb_episode_steps'])
+plt.axhline(y=0.0, color='r', linestyle='--')
 plt.title('Rewards and steps')
 plt.ylabel('Rewards and steps for 1 episode')
 plt.xlabel('Episodes (games)')
