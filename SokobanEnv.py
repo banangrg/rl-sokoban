@@ -1,14 +1,13 @@
 import os
+import gc
 import random
+import datetime
 import numpy as np
 from rl.core import Env
 from SokobanGame import SokobanGame
 from SokobanGame import RewardSystem
 from gym.spaces.discrete import Discrete
 from gym.spaces import Box
-
-from collections import Counter
-import gc
 
 
 # https://github.com/mpSchrader/gym-sokoban/blob/master/gym_sokoban/envs/sokoban_env.py
@@ -24,6 +23,8 @@ import gc
 class SokobanEnv(Env):
     GAME_SIZE_ROWS = 64
     GAME_SIZE_COLS = 64
+
+    PATH_TO_GAME_STATS = 'game_stats/'
 
     # TODO: maybe these dicts need adjusting?
     ACTIONS = {
@@ -61,15 +62,21 @@ class SokobanEnv(Env):
     temp_victory_counter = 0
 
     enable_debug_printing = False
+    use_bugged_dict_entries = True
+
+    map_frequency_stats = {}
+    game_stats = []
 
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
-                 info_game_count: int = 5000, enable_debug_printing: bool = False):
+                 info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True):
+        """ Default env size is 64x64 """
         self.env_game_state = self.generate_fixed_size_map_with_default_values()
         self.available_maps = self.get_available_maps()
         self.game_timeout = game_timeout
         self.map_in_the_center_of_fixed_size_matrix = put_map_in_the_center
         self.print_info_game_count = info_game_count
         self.enable_debug_printing = enable_debug_printing
+        self.use_bugged_dict_entries = use_bugged_dict_entries
 
         # TODO: is Env.action_space and Env.observation.space needed?
         # below commented code is modelled on https://github.com/mpSchrader/gym-sokoban/blob/master/gym_sokoban/envs/sokoban_env.py
@@ -127,6 +134,11 @@ class SokobanEnv(Env):
                 print(col, end=' ')
             print("")
 
+    @staticmethod
+    def configure_env_size(new_rows: int, new_cols: int):
+        SokobanEnv.GAME_SIZE_ROWS = new_rows
+        SokobanEnv.GAME_SIZE_COLS = new_cols
+
     def print_env(self, numbers_to_symbols: bool = False):
         for row in self.env_game_state:
             for col in row:
@@ -147,13 +159,11 @@ class SokobanEnv(Env):
     def print_games_won_info_if_needed(self, save_current_game_to_file: bool = True):
         if self.games_counter % self.print_info_game_count == 0:
             print("")
-            print(">>>>>>> " + str(self.victory_counter) + "/" + str(self.games_counter) + " games won")
-            print(">>>>>>> " + str(self.temp_victory_counter) + "/" + str(self.print_info_game_count) + " games won in this logging period")
-            print("")
+            print(" >>>>>>> " + str(self.victory_counter) + "/" + str(self.games_counter) + " games won")
+            print(" >>>>>>> " + str(self.temp_victory_counter) + "/" + str(self.print_info_game_count) + " games won in this logging period")
             self.temp_victory_counter = 0
             if save_current_game_to_file:
                 file_name = self.sokoban_game.save_game_memory_to_file(filename='basicDQN_game_')
-                print("")
                 print("Saving current game to file: " + file_name)
 
     def step(self, action):
@@ -171,7 +181,7 @@ class SokobanEnv(Env):
         if action not in self.ACTIONS:
             raise ValueError("Action " + str(action) + " not in available actions!")
 
-        sokoban_action = self.ACTIONS[action]
+        sokoban_action = self.ACTIONS[action]   # action in form ready for SokobanGame object, action is in numeric form
 
         reward_for_this_step = self.sokoban_game.move(sokoban_action)
         game_done, reward_for_game_end = self.sokoban_game.check_and_process_game_end(save_record_to_file=False)
@@ -183,15 +193,18 @@ class SokobanEnv(Env):
         if game_done:
             reward_for_this_step = reward_for_game_end
 
-            vic, _ = self.sokoban_game.is_victory(only_check=True)
-            if vic:     # for printing stats
+            was_victory, _ = self.sokoban_game.is_victory(only_check=True)
+            self.add_game_stats_entry(was_victory=was_victory)
+
+            if was_victory:     # for printing stats
                 self.victory_counter += 1
                 self.temp_victory_counter += 1
-            step_info_dict["moves_count"] = self.sokoban_game.move_counter
-            step_info_dict["was_victory"] = vic
+            if self.use_bugged_dict_entries:
+                step_info_dict["moves_count"] = self.sokoban_game.move_counter  # this appears to sometimes cause error in keras-rl callback logger - see BasicDQN.py for quick fix
+                step_info_dict["was_victory"] = was_victory
 
             if self.enable_debug_printing:
-                self.debug_print("game over , was victory: " + str(vic) + " num of moves made: " + str(self.sokoban_game.move_counter))
+                self.debug_print("game over , was victory: " + str(was_victory) + " num of moves made: " + str(self.sokoban_game.move_counter))
         self.update_env_state()
 
         return self.get_env_for_keras(), reward_for_this_step, game_done, step_info_dict
@@ -207,7 +220,10 @@ class SokobanEnv(Env):
 
         # choose random map from available ones
         chosen_map = SokobanGame.PATH_TO_LEVELS + random.choice(self.available_maps)
-
+        if chosen_map in self.map_frequency_stats:
+            self.map_frequency_stats[chosen_map] += 1
+        else:
+            self.map_frequency_stats[chosen_map] = 1
         chosen_rotation = random.choice(self.available_map_rotations)
         # create SokobanGame object
         rew_impl = RewardSystem()
@@ -217,13 +233,13 @@ class SokobanEnv(Env):
                                         map_rotation=chosen_rotation)
 
         if self.enable_debug_printing:
-            self.debug_print("Reset call")
+            self.debug_print("Reset method call")
 
         # check map dimensions
         level_size_rows, level_size_cols = np.shape(self.sokoban_game.current_level)
         if level_size_rows > self.GAME_SIZE_ROWS or level_size_cols > self.GAME_SIZE_COLS:
             raise ValueError("map size after rotation too large! Used map " + str(chosen_map) + " and rotation " + str(chosen_rotation))
-        # make map of fixed size
+        # make map of fixed size - prepare loaded map
         self.update_env_state()
 
         gc.collect()    # to help decrease memory usage (hopefully)
@@ -269,7 +285,8 @@ class SokobanEnv(Env):
         return self.sokoban_game.map_rotation
 
     def get_env_for_keras(self):
-        """ It seems that keras Conv2D requires channels even if there aren't any so we must reshape env from (64,64) to (64,64,1) \n
+        """ Used to return game_env in form ready for keras CNN
+         It seems that keras Conv2D requires channels even if there aren't any so we must reshape env from (64,64) to (64,64,1) \n
          but for Conv1D it is not needed \n
          BUT Conv2D seems like it would be better for this problem"""
         #return self.env_game_state                                                                 # for Conv1D
@@ -280,6 +297,30 @@ class SokobanEnv(Env):
         print(">>>> [DEBUG] " + communicate)
         if print_current_map:
             self.sokoban_game.print_current_level()
+
+    def print_map_frequency(self):
+        print("Map usage statistics:")
+        for used_map in self.map_frequency_stats:
+            print(used_map + " - " + str(self.map_frequency_stats[used_map]))
+
+    def add_game_stats_entry(self, was_victory: bool):
+        """ Data format: level name, map rotation, bool - was victory, number of moves, total reward """
+        self.game_stats.append(
+            (self.get_current_level_name(), self.get_current_level_rotation(), was_victory,
+             self.sokoban_game.move_counter, self.sokoban_game.total_reward)
+        )
+
+    def save_game_stats_to_file(self, base_name: str, delimiter: str = ';', file_extension='.txt'):
+        current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        filename = self.PATH_TO_GAME_STATS + "game_stats_" + base_name + "_" + current_date + file_extension
+        with open(filename, 'w+') as f:
+            for line in self.game_stats:
+                line_to_file = ""
+                for el in line:
+                    line_to_file += str(el) + delimiter
+                line_to_file = line_to_file[:-1]    # remove last element in line - delimiter
+                f.write(line_to_file + '\n')
+        return filename
 
 
 if __name__ == "__main__":
