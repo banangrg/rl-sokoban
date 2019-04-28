@@ -15,43 +15,55 @@ from pynput import keyboard
 
 
 class AbstractRewardSystem:
-    def get_reward_for_move(self):
+    @staticmethod
+    def get_reward_for_move():
         raise NotImplementedError("Please Implement this method")
 
-    def get_reward_for_box_on_target(self):
+    @staticmethod
+    def get_reward_for_box_on_target():
         raise NotImplementedError("Please Implement this method")
 
-    def get_reward_for_box_off_target(self):
+    @staticmethod
+    def get_reward_for_box_off_target():
         raise NotImplementedError("Please Implement this method")
 
-    def get_reward_for_invalid_move(self):
+    @staticmethod
+    def get_reward_for_invalid_move():
         raise NotImplementedError("Please Implement this method")
 
-    def get_reward_for_victory(self):
+    @staticmethod
+    def get_reward_for_victory():
         raise NotImplementedError("Please Implement this method")
 
-    def get_reward_for_loss(self):
+    @staticmethod
+    def get_reward_for_loss():
         raise NotImplementedError("Please Implement this method")
 
 
 class RewardSystem(AbstractRewardSystem):
-    def get_reward_for_move(self):
+    @staticmethod
+    def get_reward_for_move():
         """ for move without any effect """
         return -0.05
 
-    def get_reward_for_box_on_target(self):
+    @staticmethod
+    def get_reward_for_box_on_target():
         return 8.0
 
-    def get_reward_for_box_off_target(self):
+    @staticmethod
+    def get_reward_for_box_off_target():
         return -8.0
 
-    def get_reward_for_invalid_move(self):
+    @staticmethod
+    def get_reward_for_invalid_move():
         return -3.0
 
-    def get_reward_for_victory(self):
+    @staticmethod
+    def get_reward_for_victory():
         return 30.0
 
-    def get_reward_for_loss(self):
+    @staticmethod
+    def get_reward_for_loss():
         return -30.0
 
 
@@ -96,12 +108,15 @@ class SokobanGame:
                  manual_play: bool = True, map_rotation: int = MAP_ROTATION_NONE):
         """ Initializes single game. Requires path to file with level and a reward system (ex. basic RewardSystem()).
             Does basic validation of loaded level."""
+        # load level
         self.load_level(path_to_level)
+        # basic level  validation
         validation_ok, reason = self.check_loaded_level_basic_validation()
         if not validation_ok:
             raise Exception(reason)
         if not isinstance(reward_impl, AbstractRewardSystem):
             raise Exception("Invalid reward system")
+        # assign instance variables
         self.reward_system = reward_impl
         self.game_timeout = loss_timeout
         self.path_to_current_level = path_to_level
@@ -112,18 +127,47 @@ class SokobanGame:
         # rotate map according to setting
         self.current_level = np.rot90(self.current_level, k=map_rotation)
 
+        self.reinitialize_stats_variables()
+
+    def reinitialize_stats_variables(self):
+        self.move_counter = 0
+        self.total_reward = 0.0
+        self.moves_made = []
+        self.rewards_received = []
+
     @staticmethod
     def get_level(filepath: str):
-        """ Gets level with specified path as numpy array of characters, does NOT check map validity """
+        """ Gets level with specified path as numpy array of characters, does NOT check map validity. \n
+            Fills empty spaces outside map with WALL to correctly make numpy matrix
+            Throws ValueError if it does not find a WALL in line
+        """
         with open(filepath, "r") as f:
             lines = f.readlines()
         lines = [line.rstrip('\r\n') for line in lines]
         characters = []
-        for line in lines:
-            chars_line = []
-            chars_line.extend(line)
-            characters.append(chars_line)
-        return np.array(characters)
+        line_num = 0
+        try:
+            longest_line_len = len(max(lines, key=len)) + 1 # +1 is there to account for the empty line we add later
+            for line in lines:
+                # fill empty spaces outside map with WALL
+                index_of_first_wall_in_line = line.index(SokobanGame.WALL)
+                index_of_last_wall_in_line = line.rindex(SokobanGame.WALL)
+
+                line = line + SokobanGame.FREE_SPACE    # add one empty space at the end of each line to make it work
+                line = SokobanGame.WALL * index_of_first_wall_in_line + \
+                       line[index_of_first_wall_in_line : -(len(line) - index_of_last_wall_in_line)] + \
+                       SokobanGame.WALL * ((longest_line_len - index_of_last_wall_in_line) - 1)
+
+                # make string a list and add it to list of lists - later converted to numpy array
+                chars_line = []
+                chars_line.extend(line)
+                characters.append(chars_line)
+
+                line_num += 1
+            return np.array(characters)
+        except ValueError:
+            print("ERROR - did not find any WALL (" + SokobanGame.WALL + ") in line " + str(line_num))
+            raise
 
     @staticmethod
     def get_rules():
@@ -379,15 +423,17 @@ class SokobanGame:
             f.write(str(self.total_reward) + "\n")
             f.write(str(self.map_rotation))
 
-    def check_and_process_game_end(self):
+        return filename
+
+    def check_and_process_game_end(self, save_record_to_file: bool = True):
         """ To be called after making move, returns True if game is over, False if it is not and returns final reward - 0 if not game over yet  """
         is_victory, reward_for_victory = self.is_victory()
         is_loss, reward_for_loss = self.is_loss()
-        if is_victory:
+        if save_record_to_file:
             self.save_game_memory_to_file()
+        if is_victory:
             return True, reward_for_victory
         if is_loss:
-            self.save_game_memory_to_file()
             return True, reward_for_loss
         else:
             return False, 0
@@ -539,6 +585,6 @@ if __name__ == "__main__":
             print("First argument is name of file with level, path to levels directory is already present. Example cmd: python SokobanGame.py simplest_possible_level.txt")
             sys.exit(0)
     else:
-        level_path += "simple_level_3.txt"
+        level_path += "non_rectangle_level.txt"
     manual_sokoban = ManualPlaySokoban()
     manual_sokoban.sokoban_manual_play(level_path, use_wsad=True, map_rotation=SokobanGame.MAP_ROTATION_NONE)
