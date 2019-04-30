@@ -1,4 +1,5 @@
 import sys
+import argparse
 import datetime
 import threading
 import numpy as np
@@ -432,8 +433,12 @@ class SokobanGame:
         if save_record_to_file:
             self.save_game_memory_to_file()
         if is_victory:
+            if self.is_manual:
+                self.save_game_memory_to_file()
             return True, reward_for_victory
         if is_loss:
+            if self.is_manual:
+                self.save_game_memory_to_file()
             return True, reward_for_loss
         else:
             return False, 0
@@ -551,7 +556,7 @@ class ManualPlaySokoban:
                 if self.user_input.upper() in allowed_moves:
                     # two lines of actual game processing
                     reward = game.move(self.user_input)
-                    game.check_and_process_game_end()
+                    game.check_and_process_game_end(save_record_to_file=False)
 
                     # informational prints
                     is_v, rv = game.is_victory(only_check=True)
@@ -578,13 +583,21 @@ class ManualPlaySokoban:
 
 
 if __name__ == "__main__":
+    args_parser = argparse.ArgumentParser()
+    args_parser.add_argument("-m", "--map", type=str,
+                             help="path to map, eg 'non_rectangle_level.txt', levels directory is already specified internally",
+                             dest="map", default="non_rectangle_level.txt")
+    args_parser.add_argument("-r", "--rotation", type=int,
+                             help="rotation of map: 0 - none, 1- 90 degrees, 2 - 180 degrees, 3 - 270 degrees",
+                             choices=[0, 1, 2, 3], dest="rotation", default=0)
+    args_parser.add_argument("-w", "--wasd", help="change controls to WASD instead of using default LRUD", action="store_true",
+                             dest="use_wasd")
+    args = args_parser.parse_args()
+
     level_path = SokobanGame.PATH_TO_LEVELS
-    if len(sys.argv) > 1:
-        level_path += sys.argv[1]
-        if sys.argv[1] == '-h' or sys.argv[1] == '--help':
-            print("First argument is name of file with level, path to levels directory is already present. Example cmd: python SokobanGame.py simplest_possible_level.txt")
-            sys.exit(0)
-    else:
-        level_path += "non_rectangle_level.txt"
+    level_path += args.map
+    chosen_rotation = args.rotation
+    do_use_wasd = args.use_wasd
+
     manual_sokoban = ManualPlaySokoban()
-    manual_sokoban.sokoban_manual_play(level_path, use_wsad=True, map_rotation=SokobanGame.MAP_ROTATION_NONE)
+    manual_sokoban.sokoban_manual_play(level_path, use_wsad=do_use_wasd, map_rotation=chosen_rotation)

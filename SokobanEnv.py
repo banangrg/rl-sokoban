@@ -26,6 +26,8 @@ class SokobanEnv(Env):
 
     PATH_TO_GAME_STATS = 'game_stats/'
 
+    ENV_DTYPE = 'float32'
+
     # TODO: maybe these dicts need adjusting?
     ACTIONS = {
         0: SokobanGame.MOVE_LEFT,
@@ -83,7 +85,7 @@ class SokobanEnv(Env):
         # self.action_space = Discrete(len(self.ACTIONS))
         # max_value_in_symbols = max(self.SOKOBAN_SYMBOLS_MAPPING.values())
         # min_value_in_symbols = min(self.SOKOBAN_SYMBOLS_MAPPING.values())
-        # self.observation_space = Box(low=min_value_in_symbols, high=max_value_in_symbols, shape=(self.GAME_SIZE_ROWS, self.GAME_SIZE_COLS), dtype='float64')
+        # self.observation_space = Box(low=min_value_in_symbols, high=max_value_in_symbols, shape=(self.GAME_SIZE_ROWS, self.GAME_SIZE_COLS), dtype=self.ENV_DTYPE)
 
         # load first map
         self.reset()
@@ -100,13 +102,13 @@ class SokobanEnv(Env):
     def generate_fixed_size_map_with_default_values():
         return np.full(shape=(SokobanEnv.GAME_SIZE_ROWS, SokobanEnv.GAME_SIZE_COLS),
                        fill_value=SokobanEnv.ENV_STATE_INIT_VALUE,
-                       dtype='float64')
+                       dtype=SokobanEnv.ENV_DTYPE)
 
     @staticmethod
     def convert_map_to_fixed_size(map_to_convert, put_map_in_the_center: bool = True):
         converted_map = SokobanEnv.generate_fixed_size_map_with_default_values()
         map_rows, map_cols = np.shape(map_to_convert)
-        map_copy = np.zeros(shape=(map_rows, map_cols)).astype('float64')  # prepare matrix with size of map but with numbers instead of chars
+        map_copy = np.zeros(shape=(map_rows, map_cols)).astype(SokobanEnv.ENV_DTYPE)  # prepare matrix with size of map but with numbers instead of chars
         original_sokoban_elements = [SokobanGame.WALL, SokobanGame.FREE_SPACE, SokobanGame.BOX, SokobanGame.TARGET,
                                      SokobanGame.BOX_ON_TARGET, SokobanGame.PLAYER, SokobanGame.PLAYER_ON_TARGET]
         # replace chars with numbers
