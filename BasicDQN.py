@@ -49,7 +49,9 @@ if __name__ == "__main__":
     env = SokobanEnv(game_timeout=SokobanGame.DEFAULT_TIMEOUT,
                      put_map_in_the_center=True,
                      info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
-                     use_bugged_dict_entries=False)
+                     use_bugged_dict_entries=False,
+                     save_file_name='basicDQN_game_',
+                     save_every_game_to_file=False)
 
     print("[INFO] Building model...")
     print("Environment size is: rows: " + str(env.GAME_SIZE_ROWS) + " cols: " + str(env.GAME_SIZE_COLS))
@@ -140,7 +142,7 @@ if __name__ == "__main__":
     save_agent_weights_and_summary_to_file(base_file_name=BASE_WEIGHTS_FILE_NAME, number_of_steps_run=TOTAL_NUMBER_OF_STEPS,
                                            agent_to_save=dqn, used_model=model)
     print("Done saving dqn weights")
-    env.save_game_stats_to_file(base_name=str(BASE_WEIGHTS_FILE_NAME + str(TOTAL_NUMBER_OF_STEPS)))
+    env.save_game_stats_to_file(base_name=str(BASE_WEIGHTS_FILE_NAME + "_" + str(TOTAL_NUMBER_OF_STEPS)))
     print("Done saving stats")
 
     show_reward_plot(training_history, plot_title="BasicDQN")

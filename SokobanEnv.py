@@ -21,8 +21,8 @@ from gym.spaces import Box
 # https://github.com/openai/gym/tree/master/gym/spaces
 
 class SokobanEnv(Env):
-    GAME_SIZE_ROWS = 64
-    GAME_SIZE_COLS = 64
+    GAME_SIZE_ROWS = 32
+    GAME_SIZE_COLS = 32
 
     PATH_TO_GAME_STATS = 'game_stats/'
 
@@ -68,10 +68,13 @@ class SokobanEnv(Env):
 
     map_frequency_stats = {}
     game_stats = []
+    save_file_name = ""
+    save_every_game_to_file = False
 
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
-                 info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True):
-        """ Default env size is 64x64 """
+                 info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True,
+                 save_file_name: str = 'basicDQN_game_', save_every_game_to_file: bool = False):
+        """ Default env size is 32x32 """
         self.env_game_state = self.generate_fixed_size_map_with_default_values()
         self.available_maps = self.get_available_maps()
         self.game_timeout = game_timeout
@@ -79,6 +82,8 @@ class SokobanEnv(Env):
         self.print_info_game_count = info_game_count
         self.enable_debug_printing = enable_debug_printing
         self.use_bugged_dict_entries = use_bugged_dict_entries
+        self.save_file_name = save_file_name
+        self.save_every_game_to_file = save_every_game_to_file
 
         # TODO: is Env.action_space and Env.observation.space needed?
         # below commented code is modelled on https://github.com/mpSchrader/gym-sokoban/blob/master/gym_sokoban/envs/sokoban_env.py
@@ -159,14 +164,21 @@ class SokobanEnv(Env):
                                                              put_map_in_the_center=self.map_in_the_center_of_fixed_size_matrix)
 
     def print_games_won_info_if_needed(self, save_current_game_to_file: bool = True):
+        """ True indicates that game was saved to file, False that it wasn't """
         if self.games_counter % self.print_info_game_count == 0:
             print("")
             print(" >>>>>>> " + str(self.victory_counter) + "/" + str(self.games_counter) + " games won")
             print(" >>>>>>> " + str(self.temp_victory_counter) + "/" + str(self.print_info_game_count) + " games won in this logging period")
             self.temp_victory_counter = 0
             if save_current_game_to_file:
-                file_name = self.sokoban_game.save_game_memory_to_file(filename='basicDQN_game_')
-                print("Saving current game to file: " + file_name)
+                self.save_game_to_file(print_save_message=True)
+                return True
+            else:
+                return False
+        else:
+            return False
+
+    # ------------------ necessary overrides of base Env --------------------------------------------------------------------------------------------------------------------------------
 
     def step(self, action):
         """
@@ -218,7 +230,9 @@ class SokobanEnv(Env):
             observation (object): The initial observation of the space. Initial reward is assumed to be 0.
         """
         self.games_counter += 1
-        self.print_games_won_info_if_needed()
+        game_was_saved_to_file = self.print_games_won_info_if_needed()
+        if (not game_was_saved_to_file) and self.save_every_game_to_file:   # if we want to save every game played by agent to separate file
+            self.save_game_to_file(print_save_message=False)
 
         # choose random map from available ones
         chosen_map = SokobanGame.PATH_TO_LEVELS + random.choice(self.available_maps)
@@ -280,6 +294,8 @@ class SokobanEnv(Env):
         # TODO: what here?
         pass
 
+    # ------------------ stats utils --------------------------------------------------------------------------------------------------------------------------------
+
     def get_current_level_name(self):
         return self.sokoban_game.path_to_current_level
 
@@ -323,6 +339,11 @@ class SokobanEnv(Env):
                 line_to_file = line_to_file[:-1]    # remove last element in line - delimiter
                 f.write(line_to_file + '\n')
         return filename
+
+    def save_game_to_file(self, print_save_message: bool = False):
+        file_name = self.sokoban_game.save_game_memory_to_file(filename=self.save_file_name)
+        if print_save_message:
+            print("Saving current game to file: " + file_name)
 
 
 if __name__ == "__main__":
