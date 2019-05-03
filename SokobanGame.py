@@ -111,6 +111,7 @@ class SokobanGame:
             Does basic validation of loaded level."""
         # load level
         self.load_level(path_to_level)
+        self.path_to_current_level = path_to_level
         # basic level  validation
         validation_ok, reason = self.check_loaded_level_basic_validation()
         if not validation_ok:
@@ -120,7 +121,6 @@ class SokobanGame:
         # assign instance variables
         self.reward_system = reward_impl
         self.game_timeout = loss_timeout
-        self.path_to_current_level = path_to_level
         self.is_manual = manual_play
         if map_rotation not in [self.MAP_ROTATION_NONE, self.MAP_ROTATION_90, self.MAP_ROTATION_180, self.MAP_ROTATION_270]:
             raise Exception("Invalid map rotation option!")
@@ -148,7 +148,7 @@ class SokobanGame:
         characters = []
         line_num = 0
         try:
-            longest_line_len = len(max(lines, key=len)) + 1 # +1 is there to account for the empty line we add later
+            longest_line_len = len(max(lines, key=len)) + 1  # +1 is there to account for the empty line we add later
             for line in lines:
                 # fill empty spaces outside map with WALL
                 index_of_first_wall_in_line = line.index(SokobanGame.WALL)
@@ -223,11 +223,11 @@ class SokobanGame:
         player_count += player_on_target_count
         if boxes_not_on_target_count != target_count:
             reason = "VALIDATION FAILED: Number of targets does NOT match number of boxes, boxes: " + str(boxes_not_on_target_count) + \
-                ", targets: " + target_count
+                ", targets: " + target_count + " map = " + self.path_to_current_level
             print(reason)
             return False, reason
         if player_count != 1:
-            reason = "VALIDATION FAILED: Number of players != 1, actual: " + str(player_count)
+            reason = "VALIDATION FAILED: Number of players != 1, actual: " + str(player_count) + " map = " + self.path_to_current_level
             print(reason)
             return False, reason
         return True, "OK"
@@ -586,7 +586,7 @@ if __name__ == "__main__":
     args_parser = argparse.ArgumentParser()
     args_parser.add_argument("-m", "--map", type=str,
                              help="path to map, eg 'non_rectangle_level.txt', levels directory is already specified internally",
-                             dest="map", default="non_rectangle_level.txt")
+                             dest="map", default="SIMPLE_non_rectangle_level.txt")
     args_parser.add_argument("-r", "--rotation", type=int,
                              help="rotation of map: 0 - none, 1- 90 degrees, 2 - 180 degrees, 3 - 270 degrees",
                              choices=[0, 1, 2, 3], dest="rotation", default=0)

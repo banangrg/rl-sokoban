@@ -1,4 +1,4 @@
-levels/very_simple_level.txt
+levels/VERY_SIMPLE_level.txt
 U;U;U;D;U;U;U;U;U;U
 -0.05;-0.05;-0.05;-0.05;-0.05;-0.05;-0.05;-0.05;-0.05;8.0;30.0
 37.55

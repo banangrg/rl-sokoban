@@ -51,7 +51,8 @@ if __name__ == "__main__":
                      info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
                      use_bugged_dict_entries=False,
                      save_file_name='basicDQN_game_',
-                     save_every_game_to_file=False)
+                     save_every_game_to_file=False,
+                     map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL)
 
     print("[INFO] Building model...")
     print("Environment size is: rows: " + str(env.GAME_SIZE_ROWS) + " cols: " + str(env.GAME_SIZE_COLS))
@@ -131,7 +132,7 @@ if __name__ == "__main__":
     print("[INFO] Done training...")
     print("Played total of ", env.games_counter, " games")
     print("Won total of ", env.victory_counter, " games")
-    env.print_map_frequency()
+    env.print_map_victory_stats()
     print('-'*50)
 
     print(training_history.history.keys())

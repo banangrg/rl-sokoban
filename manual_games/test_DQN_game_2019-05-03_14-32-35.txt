@@ -1,0 +1,5 @@
+levels/SIMPLE_map_16.txt
+L
+-0.05;-30.0
+-30.05
+1
