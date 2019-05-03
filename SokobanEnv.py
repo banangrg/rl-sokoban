@@ -28,6 +28,10 @@ class SokobanEnv(Env):
 
     ENV_DTYPE = 'float32'
 
+    USE_ONLY_SIMPLE_AND_VERY_SIMPLE_MAPS = 0
+    USE_ALL_MAPS_ALWAYS = 1
+    USE_MAPS_DIFFICULTY_LEVEL = 2
+
     # TODO: maybe these dicts need adjusting?
     ACTIONS = {
         0: SokobanGame.MOVE_LEFT,
@@ -45,6 +49,14 @@ class SokobanEnv(Env):
         SokobanGame.PLAYER          : 8,
         SokobanGame.PLAYER_ON_TARGET: 9
     }
+
+    GAMES_COUNT_AND_MAP_PREFIXES = [
+        (0, "VERY_SIMPLE"),
+        (500, "SIMPLE"),
+        (2500, "MEDIUM"),
+        (5000, "HARD"),
+        (10000, "VERY_HARD")
+    ]
 
     ENV_STATE_INIT_VALUE = -999.0
 
@@ -67,16 +79,25 @@ class SokobanEnv(Env):
     use_bugged_dict_entries = True
 
     map_frequency_stats = {}
+    map_frequency_victory_stats = {}
     game_stats = []
     save_file_name = ""
     save_every_game_to_file = False
+    use_map_difficulty_in_training_option = 0
+    current_level_name = ""
 
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
                  info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True,
-                 save_file_name: str = 'basicDQN_game_', save_every_game_to_file: bool = False):
-        """ Default env size is 32x32 """
+                 save_file_name: str = 'basicDQN_game_', save_every_game_to_file: bool = False,
+                 map_choice_option=0):
+        """ Default env size is 32x32.
+        Map choice options: \n
+        USE_ONLY_SIMPLE_AND_VERY_SIMPLE_MAPS = 0 (default)\n
+        USE_ALL_MAPS_ALWAYS = 1  - does not filter maps by difficulty, could be used to test trained models \n
+        USE_MAPS_DIFFICULTY_LEVEL = 2  - will use SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES to determine when to use which maps
+        """
         self.env_game_state = self.generate_fixed_size_map_with_default_values()
-        self.available_maps = self.get_available_maps()
+        self.available_maps = self.get_all_available_maps()
         self.game_timeout = game_timeout
         self.map_in_the_center_of_fixed_size_matrix = put_map_in_the_center
         self.print_info_game_count = info_game_count
@@ -84,6 +105,7 @@ class SokobanEnv(Env):
         self.use_bugged_dict_entries = use_bugged_dict_entries
         self.save_file_name = save_file_name
         self.save_every_game_to_file = save_every_game_to_file
+        self.use_map_difficulty_in_training_option = map_choice_option
 
         # TODO: is Env.action_space and Env.observation.space needed?
         # below commented code is modelled on https://github.com/mpSchrader/gym-sokoban/blob/master/gym_sokoban/envs/sokoban_env.py
@@ -96,11 +118,20 @@ class SokobanEnv(Env):
         self.reset()
 
     @staticmethod
-    def get_available_maps():
+    def get_all_available_maps():
         found_maps = []
         for file in os.listdir(SokobanGame.PATH_TO_LEVELS):
             if file.endswith(".txt"):
                 found_maps.append(file)
+        return found_maps
+
+    @staticmethod
+    def get_maps_with_prefix(prefix):
+        found_maps = []
+        for file in os.listdir(SokobanGame.PATH_TO_LEVELS):
+            if file.endswith(".txt"):
+                if file.upper().startswith(prefix.upper()):  # check all with available prefixes
+                    found_maps.append(file)
         return found_maps
 
     @staticmethod
@@ -146,6 +177,17 @@ class SokobanEnv(Env):
         SokobanEnv.GAME_SIZE_ROWS = new_rows
         SokobanEnv.GAME_SIZE_COLS = new_cols
 
+    @staticmethod
+    def configure_difficulty_games_count_requirement(simple_threshold: int, medium_threshold: int, hard_threshold, very_hard_threshold: int):
+        """ Threshold for very simple maps is always 0 """
+        SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES = [
+            (0, "VERY_SIMPLE"),
+            (simple_threshold, "SIMPLE"),
+            (medium_threshold, "MEDIUM"),
+            (hard_threshold, "HARD"),
+            (very_hard_threshold, "VERY_HARD")
+        ]
+
     def print_env(self, numbers_to_symbols: bool = False):
         for row in self.env_game_state:
             for col in row:
@@ -160,15 +202,18 @@ class SokobanEnv(Env):
         pass
 
     def update_env_state(self):
+        """ converts loaded game map to fixed size """
         self.env_game_state = self.convert_map_to_fixed_size(self.sokoban_game.current_level,
                                                              put_map_in_the_center=self.map_in_the_center_of_fixed_size_matrix)
 
     def print_games_won_info_if_needed(self, save_current_game_to_file: bool = True):
-        """ True indicates that game was saved to file, False that it wasn't """
+        """ Simple basic logging \n
+        True indicates that game was saved to file, False that it wasn't """
         if self.games_counter % self.print_info_game_count == 0:
             print("")
             print(" >>>>>>> " + str(self.victory_counter) + "/" + str(self.games_counter) + " games won")
             print(" >>>>>>> " + str(self.temp_victory_counter) + "/" + str(self.print_info_game_count) + " games won in this logging period")
+            print(" >>>>>>> number of maps for training: " + str(len(self.available_maps)))
             self.temp_victory_counter = 0
             if save_current_game_to_file:
                 self.save_game_to_file(print_save_message=True)
@@ -177,6 +222,22 @@ class SokobanEnv(Env):
                 return False
         else:
             return False
+
+    def get_available_maps_with_difficulty(self):
+        """ difficulty according to SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES """
+        found_maps = []
+        available_prefixes = []
+        games_played_count_ind = 0
+        map_name_prefix_ind = 1
+        # first get available prefixes
+        for count_prefix in self.GAMES_COUNT_AND_MAP_PREFIXES:
+            if count_prefix[games_played_count_ind] <= self.games_counter:
+                available_prefixes.append(count_prefix[map_name_prefix_ind])
+        # then maps with these prefixes
+        for prefix in available_prefixes:
+            maps = self.get_maps_with_prefix(prefix)
+            found_maps.extend(maps)
+        return found_maps
 
     # ------------------ necessary overrides of base Env --------------------------------------------------------------------------------------------------------------------------------
 
@@ -195,7 +256,7 @@ class SokobanEnv(Env):
         if action not in self.ACTIONS:
             raise ValueError("Action " + str(action) + " not in available actions!")
 
-        sokoban_action = self.ACTIONS[action]   # action in form ready for SokobanGame object, action is in numeric form
+        sokoban_action = self.ACTIONS[action]   # action in form ready for SokobanGame object, action parameter is in numeric form, we need to convert it
 
         reward_for_this_step = self.sokoban_game.move(sokoban_action)
         game_done, reward_for_game_end = self.sokoban_game.check_and_process_game_end(save_record_to_file=False)
@@ -210,9 +271,11 @@ class SokobanEnv(Env):
             was_victory, _ = self.sokoban_game.is_victory(only_check=True)
             self.add_game_stats_entry(was_victory=was_victory)
 
-            if was_victory:     # for printing stats
+            if was_victory:     # for stats
                 self.victory_counter += 1
                 self.temp_victory_counter += 1
+                # add map victory stats
+                self.add_one_to_stats_dict(stats_dict=self.map_frequency_victory_stats, key=self.current_level_name)
             if self.use_bugged_dict_entries:
                 step_info_dict["moves_count"] = self.sokoban_game.move_counter  # this appears to sometimes cause error in keras-rl callback logger - see BasicDQN.py for quick fix
                 step_info_dict["was_victory"] = was_victory
@@ -229,18 +292,27 @@ class SokobanEnv(Env):
         # Returns
             observation (object): The initial observation of the space. Initial reward is assumed to be 0.
         """
+        # simple logging of victory stats before we reset the env
         self.games_counter += 1
         game_was_saved_to_file = self.print_games_won_info_if_needed()
         if (not game_was_saved_to_file) and self.save_every_game_to_file:   # if we want to save every game played by agent to separate file
             self.save_game_to_file(print_save_message=False)
 
+        # get available maps - according to map selection option defined when creating the env object
+        if self.use_map_difficulty_in_training_option == self.USE_MAPS_DIFFICULTY_LEVEL:
+            self.available_maps = self.get_available_maps_with_difficulty()
+        elif self.use_map_difficulty_in_training_option == self.USE_ALL_MAPS_ALWAYS:
+            self.available_maps = self.get_all_available_maps()
+        else:   # default
+            self.available_maps = self.get_maps_with_prefix("VERY_SIMPLE")
+            self.available_maps.extend(self.get_maps_with_prefix("SIMPLE"))
+
         # choose random map from available ones
         chosen_map = SokobanGame.PATH_TO_LEVELS + random.choice(self.available_maps)
-        if chosen_map in self.map_frequency_stats:
-            self.map_frequency_stats[chosen_map] += 1
-        else:
-            self.map_frequency_stats[chosen_map] = 1
+        self.current_level_name = chosen_map
+        self.add_one_to_stats_dict(stats_dict=self.map_frequency_stats, key=self.current_level_name)
         chosen_rotation = random.choice(self.available_map_rotations)
+
         # create SokobanGame object
         rew_impl = RewardSystem()
         self.sokoban_game = SokobanGame(chosen_map, rew_impl,
@@ -258,9 +330,7 @@ class SokobanEnv(Env):
         # make map of fixed size - prepare loaded map
         self.update_env_state()
 
-        gc.collect()    # to help decrease memory usage (hopefully)
-
-        return self.get_env_for_keras()
+        return self.get_env_for_keras()     # return map in state ready for keras
 
     def render(self, mode='human', close=False):
         """
@@ -294,6 +364,13 @@ class SokobanEnv(Env):
         # TODO: what here?
         pass
 
+    def get_env_for_keras(self):
+        """ Used to return game_env in form ready for keras CNN
+         keras Conv2D requires channels even if there aren't any so we must reshape env from (64,64) to (64,64,1) \n
+         If we want another format (eg. additional representation of game map in additional channels) this method needs to be changed"""
+        #return self.env_game_state                                                                 # for Conv1D
+        return np.expand_dims(self.env_game_state, axis=2)                                          # for Conv2D
+
     # ------------------ stats utils --------------------------------------------------------------------------------------------------------------------------------
 
     def get_current_level_name(self):
@@ -302,24 +379,17 @@ class SokobanEnv(Env):
     def get_current_level_rotation(self):
         return self.sokoban_game.map_rotation
 
-    def get_env_for_keras(self):
-        """ Used to return game_env in form ready for keras CNN
-         It seems that keras Conv2D requires channels even if there aren't any so we must reshape env from (64,64) to (64,64,1) \n
-         but for Conv1D it is not needed \n
-         BUT Conv2D seems like it would be better for this problem"""
-        #return self.env_game_state                                                                 # for Conv1D
-        return np.expand_dims(self.env_game_state, axis=2)                                          # for Conv2D
-
     def debug_print(self, communicate: str, print_current_map: bool = True):
         print("")   # print empty line to make communicate more visible
         print(">>>> [DEBUG] " + communicate)
         if print_current_map:
             self.sokoban_game.print_current_level()
 
-    def print_map_frequency(self):
-        print("Map usage statistics:")
+    def print_map_victory_stats(self):
+        print("Map victory statistics: [map - victories/played games]")
         for used_map in self.map_frequency_stats:
-            print(used_map + " - " + str(self.map_frequency_stats[used_map]))
+            stats_for_used_map = self.get_map_stats_line_for_key(used_map)
+            print(stats_for_used_map)
 
     def add_game_stats_entry(self, was_victory: bool):
         """ Data format: level name, map rotation, bool - was victory, number of moves, total reward """
@@ -331,6 +401,7 @@ class SokobanEnv(Env):
     def save_game_stats_to_file(self, base_name: str, delimiter: str = ';', file_extension='.txt'):
         current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         filename = self.PATH_TO_GAME_STATS + "game_stats_" + base_name + "_" + current_date + file_extension
+        summary_filename = self.PATH_TO_GAME_STATS + "game_stats_summary_" + base_name + "_" + current_date + file_extension
         with open(filename, 'w+') as f:
             for line in self.game_stats:
                 line_to_file = ""
@@ -338,12 +409,31 @@ class SokobanEnv(Env):
                     line_to_file += str(el) + delimiter
                 line_to_file = line_to_file[:-1]    # remove last element in line - delimiter
                 f.write(line_to_file + '\n')
-        return filename
+        with open(summary_filename, 'w+') as f:  # save stats summary
+            for used_map in self.map_frequency_stats:
+                stats_for_used_map = self.get_map_stats_line_for_key(used_map)
+                f.write(stats_for_used_map + '\n')
+        return filename, summary_filename
 
     def save_game_to_file(self, print_save_message: bool = False):
         file_name = self.sokoban_game.save_game_memory_to_file(filename=self.save_file_name)
         if print_save_message:
             print("Saving current game to file: " + file_name)
+
+    def get_map_stats_line_for_key(self, key):
+        """ Format: map name - games won/games played """
+        try:
+            games_won = str(self.map_frequency_victory_stats[key])
+        except KeyError:  # indicates that there were no victories on given map
+            games_won = 0
+        return str(key + " - " + str(games_won) + "/" + str(self.map_frequency_stats[key]))
+
+    @staticmethod
+    def add_one_to_stats_dict(stats_dict, key):
+        if key in stats_dict:
+            stats_dict[key] += 1
+        else:
+            stats_dict[key] = 1
 
 
 if __name__ == "__main__":
