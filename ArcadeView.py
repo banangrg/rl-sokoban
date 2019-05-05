@@ -11,13 +11,16 @@ class ArcadeView(arcade.Window):
 
         self.listeners = []
         self.game_map = game_map
+        self.shouldDisplayMessage = False
+        self.message = "Default Message"
 
-        arcade.draw_text("Hello", 0, 0, arcade.color.PINK, 24)
-        # arcade.run()
+        arcade.start_render()
+        arcade.set_background_color(SobParams.BACKGROUND_COLOR)
 
     def on_draw(self):
-        arcade.start_render()
         self.draw_map()
+        if self.shouldDisplayMessage:
+            arcade.draw_text(self.message, 0, 0, arcade.color.PINK, 24)
 
     def on_key_press(self, key, modifiers):
         for listener in self.listeners:
@@ -34,7 +37,8 @@ class ArcadeView(arcade.Window):
                 self.draw_field_at(i, j, BlockType(self.game_map[i][j]))
 
     def draw_game_over(self, text):
-        arcade.draw_text(text, 0, 0, arcade.color.PINK, 24)
+        self.shouldDisplayMessage = True
+        self.message = text
 
     def add_listener(self, listener):
         self.listeners.append(listener)
