@@ -2,16 +2,21 @@ from operator import add
 
 import arcade
 
+from ArcadeView import ArcadeView
 import SobParams as cs
 import Utils
+from ArcadeViewListener import ArcadeViewListener
 from BlockType import BlockType
 from RecordSaver import RecordSaver
 from RewardDict import RewardDict
 
 
-class SobokanGame(arcade.Window):
-    def __init__(self, width, height, title, game_map):
-        super().__init__(width, height, title)
+class SobokanGameEngine(ArcadeViewListener):
+    def __init__(self, game_map):
+        super().__init__()
+
+        self.arcadeView = ArcadeView(game_map)
+        self.arcadeView.add_listener(self)
 
         self.game_map = game_map
         self.player_position = self.find_block_of_type(BlockType.PLAYER)
@@ -21,11 +26,9 @@ class SobokanGame(arcade.Window):
         self.moves = []
         self.record_saved = False
         self.rewards = []
-        arcade.set_background_color(cs.BACKGROUND_COLOR)
 
     def on_draw(self):
-        arcade.start_render()
-        self.draw_map()
+        # self.draw_map()
         if self.game_over:
             self.draw_game_over()
             if not self.record_saved:
@@ -34,7 +37,8 @@ class SobokanGame(arcade.Window):
                 RecordSaver.write_record()
                 self.record_saved = True
 
-    def on_key_press(self, key, modifiers):
+    def on_key_press(self, key):
+        # super.on_key_press(key)
         if self.game_over:
             return
         if key == arcade.key.LEFT:
@@ -94,10 +98,13 @@ class SobokanGame(arcade.Window):
             self.game_over = True
             self.rewards.append(RewardDict.LOSS)
 
+        self.on_draw()
+
     def draw_map(self):
-        for i in range(len(self.game_map)):
-            for j in range(len(self.game_map[i])):
-                Utils.draw_field_at(i, j, BlockType(self.game_map[i][j]))
+        self.arcadeView.draw_map(self.game_map)
+        # for i in range(len(self.game_map)):
+        #     for j in range(len(self.game_map[i])):
+        #         ArcadeView.draw_field_at(i, j, BlockType(self.game_map[i][j]))
 
     def find_block_of_type(self, block_type):
         for i in range(len(self.game_map)):
@@ -154,4 +161,5 @@ class SobokanGame(arcade.Window):
             output = "Failure"
         else:
             output = "Success"
+        self.arcadeView.draw_game_over(output)
         arcade.draw_text(output, 0, 0, arcade.color.PINK, 24)
