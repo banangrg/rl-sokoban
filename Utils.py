@@ -1,7 +1,9 @@
 import sys
 
-import SobParams as cs
+import SobParams as SobParams
 from BlockType import BlockType
+
+
 # from ArcadeView import draw_field_at
 
 
@@ -33,16 +35,6 @@ def add_some_walls(example_map):
     example_map[8][4] = BlockType.WALL
 
 
-# def draw_map(map):
-#     print(type(map))
-#     for i in range(len(map)):
-#         for j in range(len(map[i])):
-#             if BlockType(map[i][j]) == BlockType.PLAYER:
-#                 player_position = [i, j]
-#             draw_field_at(i, j, BlockType(map[i][j]))
-#     return player_position
-
-
 def get_level_name(argv):
     level_path = ""
     if len(argv) > 1:
@@ -52,17 +44,18 @@ def get_level_name(argv):
                 "First argument is name of file with level, path to levels directory is already present. Example cmd: python SokobanGame.py simplest_possible_level.txt")
             sys.exit(0)
     else:
-        level_path += cs.DEFAULT_LEVEL
+        level_path += SobParams.DEFAULT_LEVEL
     return level_path
 
 
 def get_level_path(argv):
-    level_path = cs.PATH_TO_LEVELS
+    level_path = SobParams.PATH_TO_LEVELS
     level_name = get_level_name(argv)
     return level_path + level_name
 
+
 def get_record_path(argv):
-    record_path = cs.PATH_TO_MANUAL_GAMES
+    record_path = SobParams.PATH_TO_MANUAL_GAMES
     level_name = get_level_name(argv)
     return record_path + level_name
 
@@ -77,5 +70,16 @@ def read_map_from_file_path(file_path):
 
 
 def set_width_and_height(game_map):
-    cs.WINDOW_WIDTH = len(game_map) * cs.FIELD_WIDTH
-    cs.WINDOW_HEIGHT = len(game_map[0]) * cs.FIELD_HEIGHT
+    SobParams.WINDOW_WIDTH = len(game_map) * SobParams.FIELD_WIDTH
+    SobParams.WINDOW_HEIGHT = len(game_map[0]) * SobParams.FIELD_HEIGHT
+
+
+def get_example_moves():
+    return "L;U;R;D;" * 10
+
+
+def get_moves_from_record_file(file_name):
+    file = open("manual_games\\" + file_name, "r")
+    content = file.read()
+    lines = content.split("\n")
+    return lines[1]

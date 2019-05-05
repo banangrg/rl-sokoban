@@ -2,6 +2,7 @@ import arcade
 
 import SobParams as SobParams
 from BlockType import BlockType
+from MoveEnum import MoveEnum
 
 
 class ArcadeView(arcade.Window):
@@ -23,8 +24,21 @@ class ArcadeView(arcade.Window):
             arcade.draw_text(self.message, 0, 0, arcade.color.PINK, 24)
 
     def on_key_press(self, key, modifiers):
+        if key == arcade.key.LEFT:
+            print("left")
+            key = MoveEnum.LEFT
+        elif key == arcade.key.RIGHT:
+            print("right")
+            key = MoveEnum.RIGHT
+        elif key == arcade.key.UP:
+            print("up")
+            key = MoveEnum.UP
+        elif key == arcade.key.DOWN:
+            print("down")
+            key = MoveEnum.DOWN
+
         for listener in self.listeners:
-            listener.on_key_press(key)
+            listener.make_a_move(key)
 
     def draw_field_at(self, x, y, block_type):
         arcade.draw_xywh_rectangle_filled(x * SobParams.FIELD_WIDTH, y * SobParams.FIELD_HEIGHT, SobParams.FIELD_WIDTH,
