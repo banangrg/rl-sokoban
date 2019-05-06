@@ -1,3 +1,4 @@
+import os
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,7 +23,8 @@ class DimensionKillerProcessor(Processor):
         useless and prevents me from feeding the tensor into my CNN
 
         This processor removes one dimension from state_batch that is added there by some bug in keras-rl
-        Without this keras would raise an error that it has too many dimensions in first Conv layer
+        Without this keras would raise an error that it has too many dimensions in first Conv layer \n
+        This only applies if input has only one channel!
 
         Based on: \n
         # https://github.com/keras-rl/keras-rl/issues/306   \n
@@ -44,6 +46,15 @@ def save_agent_weights_and_summary_to_file(base_file_name: str, number_of_steps_
         used_model.summary(print_fn=lambda x: fh.write(x + '\n'))
 
     agent_to_save.save_weights(weights_filename)
+
+
+def load_agent_weights(agent_obj, weights_file_path):
+    if os.path.isfile(weights_file_path):
+        agent_obj.load_weights(weights_file_path)
+        return agent_obj
+    else:
+        print("ERROR! Weights file not found at given location: " + weights_file_path)
+        return None
 
 
 def show_reward_plot(training_history, plot_title: str, plot_nb_episode_steps: bool = False):
