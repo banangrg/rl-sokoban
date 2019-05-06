@@ -3,9 +3,11 @@ import gc
 import random
 import datetime
 import numpy as np
+from time import sleep
 from rl.core import Env
 from SokobanGame import SokobanGame
 from SokobanGame import RewardSystem
+from sklearn.preprocessing import MinMaxScaler
 from gym.spaces.discrete import Discrete
 from gym.spaces import Box
 
@@ -25,12 +27,14 @@ class SokobanEnv(Env):
     GAME_SIZE_COLS = 32
 
     PATH_TO_GAME_STATS = 'game_stats/'
+    SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection.txt'
 
     ENV_DTYPE = 'float32'
 
     USE_ONLY_SIMPLE_AND_VERY_SIMPLE_MAPS = 0
     USE_ALL_MAPS_ALWAYS = 1
     USE_MAPS_DIFFICULTY_LEVEL = 2
+    USE_MAPS_FROM_FILE = 3
 
     # TODO: maybe these dicts need adjusting?
     ACTIONS = {
@@ -40,6 +44,16 @@ class SokobanEnv(Env):
         3: SokobanGame.MOVE_DOWN
     }
 
+    MAX_SYMBOL_VALUE = 224.0
+    SOKOBAN_SYMBOLS_MAPPING_SCALED = {
+        SokobanGame.WALL: 32.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.FREE_SPACE: 0.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.BOX: 96 / MAX_SYMBOL_VALUE,
+        SokobanGame.TARGET: 160 / MAX_SYMBOL_VALUE,
+        SokobanGame.BOX_ON_TARGET: 128 / MAX_SYMBOL_VALUE,
+        SokobanGame.PLAYER: 224 / MAX_SYMBOL_VALUE,
+        SokobanGame.PLAYER_ON_TARGET: 192 / MAX_SYMBOL_VALUE
+    }
     SOKOBAN_SYMBOLS_MAPPING = {
         SokobanGame.WALL            : 0,
         SokobanGame.FREE_SPACE      : 1,
@@ -83,18 +97,28 @@ class SokobanEnv(Env):
     game_stats = []
     save_file_name = ""
     save_every_game_to_file = False
-    use_map_difficulty_in_training_option = 0
+    map_selection_option = 0
     current_level_name = ""
+    use_more_than_one_channel = False
+
+    scale_rewards = False
+    reward_scaler = None
+    scale_range = (0, 1)
+    used_sokoban_symbols_mapping = None
 
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
                  info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True,
                  save_file_name: str = 'basicDQN_game_', save_every_game_to_file: bool = False,
-                 map_choice_option=0):
+                 map_choice_option: int = 0, use_more_than_one_channel: bool = False, scale_rewards: bool = False,
+                 scale_range=(-1, 1), use_scaled_env_representation: bool = False):
         """ Default env size is 32x32.
         Map choice options: \n
         USE_ONLY_SIMPLE_AND_VERY_SIMPLE_MAPS = 0 (default)\n
         USE_ALL_MAPS_ALWAYS = 1  - does not filter maps by difficulty, could be used to test trained models \n
-        USE_MAPS_DIFFICULTY_LEVEL = 2  - will use SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES to determine when to use which maps
+        USE_MAPS_DIFFICULTY_LEVEL = 2  - will use SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES to determine when to use which maps \n
+        USE_MAPS_FROM_FILE = 3 - will use only maps specified in file levels/_specific_maps_selection.txt (specified WITH levels/) \n
+        IMPORTANT NOTE: \n
+        If window_length of Agent is not equal to 1 than use_more_than_one_channel MUST be set to True!
         """
         self.env_game_state = self.generate_fixed_size_map_with_default_values()
         self.available_maps = self.get_all_available_maps()
@@ -105,7 +129,17 @@ class SokobanEnv(Env):
         self.use_bugged_dict_entries = use_bugged_dict_entries
         self.save_file_name = save_file_name
         self.save_every_game_to_file = save_every_game_to_file
-        self.use_map_difficulty_in_training_option = map_choice_option
+        self.map_selection_option = map_choice_option
+        self.use_more_than_one_channel = use_more_than_one_channel
+        self.scale_rewards = scale_rewards
+        self.scale_range = scale_range
+        if self.scale_rewards:
+            self.reward_scaler = MinMaxScaler(feature_range=self.scale_range)
+            self.reward_scaler.fit(self.get_form_for_scaling(self.reward_range))
+        if use_scaled_env_representation:
+            self.used_sokoban_symbols_mapping = self.SOKOBAN_SYMBOLS_MAPPING_SCALED
+        else:
+            self.used_sokoban_symbols_mapping = self.SOKOBAN_SYMBOLS_MAPPING
 
         # TODO: is Env.action_space and Env.observation.space needed?
         # below commented code is modelled on https://github.com/mpSchrader/gym-sokoban/blob/master/gym_sokoban/envs/sokoban_env.py
@@ -135,13 +169,18 @@ class SokobanEnv(Env):
         return found_maps
 
     @staticmethod
+    def get_maps_specified_in_file():
+        with open(SokobanEnv.SPECIFIC_MAPS_FILE_NAME, 'r') as f:
+            specified_maps = f.readlines()
+        return specified_maps
+
+    @staticmethod
     def generate_fixed_size_map_with_default_values():
         return np.full(shape=(SokobanEnv.GAME_SIZE_ROWS, SokobanEnv.GAME_SIZE_COLS),
                        fill_value=SokobanEnv.ENV_STATE_INIT_VALUE,
                        dtype=SokobanEnv.ENV_DTYPE)
 
-    @staticmethod
-    def convert_map_to_fixed_size(map_to_convert, put_map_in_the_center: bool = True):
+    def convert_map_to_fixed_size(self, map_to_convert, put_map_in_the_center: bool = True):
         converted_map = SokobanEnv.generate_fixed_size_map_with_default_values()
         map_rows, map_cols = np.shape(map_to_convert)
         map_copy = np.zeros(shape=(map_rows, map_cols)).astype(SokobanEnv.ENV_DTYPE)  # prepare matrix with size of map but with numbers instead of chars
@@ -149,7 +188,7 @@ class SokobanEnv(Env):
                                      SokobanGame.BOX_ON_TARGET, SokobanGame.PLAYER, SokobanGame.PLAYER_ON_TARGET]
         # replace chars with numbers
         for symbol in original_sokoban_elements:
-            map_copy[map_to_convert == symbol] = SokobanEnv.SOKOBAN_SYMBOLS_MAPPING[symbol]
+            map_copy[map_to_convert == symbol] = self.used_sokoban_symbols_mapping[symbol]
         if put_map_in_the_center:
             row_middle_of_fixed_size_matrix = int(SokobanEnv.GAME_SIZE_ROWS / 2)
             col_middle_of_fixed_size_matrix = int(SokobanEnv.GAME_SIZE_COLS / 2)
@@ -161,7 +200,7 @@ class SokobanEnv(Env):
         # paste map into larger matrix of fixed size
         converted_map[row_begin: row_begin + map_rows, col_begin: col_begin + map_cols] = map_copy
         # replace surrounding space with walls
-        converted_map[converted_map == SokobanEnv.ENV_STATE_INIT_VALUE] = SokobanEnv.SOKOBAN_SYMBOLS_MAPPING[SokobanGame.WALL]
+        converted_map[converted_map == SokobanEnv.ENV_STATE_INIT_VALUE] = self.used_sokoban_symbols_mapping[SokobanGame.WALL]
         return converted_map
 
     @staticmethod
@@ -188,12 +227,20 @@ class SokobanEnv(Env):
             (very_hard_threshold, "VERY_HARD")
         ]
 
+    @staticmethod
+    def get_form_for_scaling(scaled_number):
+        return np.array(scaled_number).reshape(-1, 1)
+
+    @staticmethod
+    def unpack_scaled_number(number_after_scaling):
+        return number_after_scaling[0][0]
+
     def print_env(self, numbers_to_symbols: bool = False):
         for row in self.env_game_state:
             for col in row:
                 prt = col
                 if numbers_to_symbols:
-                    prt = list(SokobanEnv.SOKOBAN_SYMBOLS_MAPPING.keys())[list(SokobanEnv.SOKOBAN_SYMBOLS_MAPPING.values()).index(int(col))]
+                    prt = list(self.used_sokoban_symbols_mapping.keys())[list(self.used_sokoban_symbols_mapping.values()).index(int(col))]
                 print(prt, end='')
             print("")
 
@@ -284,6 +331,9 @@ class SokobanEnv(Env):
                 self.debug_print("game over , was victory: " + str(was_victory) + " num of moves made: " + str(self.sokoban_game.move_counter))
         self.update_env_state()
 
+        if self.scale_rewards:  # scales reward to given range
+            reward_for_this_step = self.unpack_scaled_number(self.reward_scaler.transform(self.get_form_for_scaling(reward_for_this_step)))
+
         return self.get_env_for_keras(), reward_for_this_step, game_done, step_info_dict
 
     def reset(self):
@@ -299,10 +349,12 @@ class SokobanEnv(Env):
             self.save_game_to_file(print_save_message=False)
 
         # get available maps - according to map selection option defined when creating the env object
-        if self.use_map_difficulty_in_training_option == self.USE_MAPS_DIFFICULTY_LEVEL:
+        if self.map_selection_option == self.USE_MAPS_DIFFICULTY_LEVEL:
             self.available_maps = self.get_available_maps_with_difficulty()
-        elif self.use_map_difficulty_in_training_option == self.USE_ALL_MAPS_ALWAYS:
+        elif self.map_selection_option == self.USE_ALL_MAPS_ALWAYS:
             self.available_maps = self.get_all_available_maps()
+        elif self.map_selection_option == self.USE_MAPS_FROM_FILE:
+            self.available_maps = self.get_maps_specified_in_file()
         else:   # default
             self.available_maps = self.get_maps_with_prefix("VERY_SIMPLE")
             self.available_maps.extend(self.get_maps_with_prefix("SIMPLE"))
@@ -343,6 +395,7 @@ class SokobanEnv(Env):
         """
         if mode == 'human':
             self.sokoban_game.print_current_level()
+            sleep(0.5)
         else:
             pass
 
@@ -366,10 +419,12 @@ class SokobanEnv(Env):
 
     def get_env_for_keras(self):
         """ Used to return game_env in form ready for keras CNN
-         keras Conv2D requires channels even if there aren't any so we must reshape env from (64,64) to (64,64,1) \n
-         If we want another format (eg. additional representation of game map in additional channels) this method needs to be changed"""
-        #return self.env_game_state                                                                 # for Conv1D
-        return np.expand_dims(self.env_game_state, axis=2)                                          # for Conv2D
+         keras Conv2D requires channels even if there aren't any so we must reshape env from (32,32) to (32,32,1) \n
+         If we want another format (eg. additional representation of game map in additional channels) this method needs to be changed."""
+        if self.use_more_than_one_channel:  # there are more channels already provided (eg. by memory window_length) so we don't need to add artificial one
+            return self.env_game_state
+        else:
+            return np.expand_dims(self.env_game_state, axis=2)  # if we have no channels we still need to make an artificial one for keras to work
 
     # ------------------ stats utils --------------------------------------------------------------------------------------------------------------------------------
 
