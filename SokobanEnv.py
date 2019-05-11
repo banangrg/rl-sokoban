@@ -106,17 +106,19 @@ class SokobanEnv(Env):
     scale_range = (0, 1)
     used_sokoban_symbols_mapping = None
 
+    disable_map_rotation = False
+
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
                  info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True,
                  save_file_name: str = 'basicDQN_game_', save_every_game_to_file: bool = False,
                  map_choice_option: int = 0, use_more_than_one_channel: bool = False, scale_rewards: bool = False,
-                 scale_range=(-1, 1), use_scaled_env_representation: bool = False):
+                 scale_range=(-1, 1), use_scaled_env_representation: bool = False, disable_map_rotation: bool = False):
         """ Default env size is 32x32.
         Map choice options: \n
         USE_ONLY_SIMPLE_AND_VERY_SIMPLE_MAPS = 0 (default)\n
         USE_ALL_MAPS_ALWAYS = 1  - does not filter maps by difficulty, could be used to test trained models \n
         USE_MAPS_DIFFICULTY_LEVEL = 2  - will use SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES to determine when to use which maps \n
-        USE_MAPS_FROM_FILE = 3 - will use only maps specified in file levels/_specific_maps_selection.txt (specified WITH levels/) \n
+        USE_MAPS_FROM_FILE = 3 - will use only maps specified in file levels/_specific_maps_selection.txt (specified WITHOUT levels/) \n
         IMPORTANT NOTE: \n
         If window_length of Agent is not equal to 1 than use_more_than_one_channel MUST be set to True!
         """
@@ -140,6 +142,7 @@ class SokobanEnv(Env):
             self.used_sokoban_symbols_mapping = self.SOKOBAN_SYMBOLS_MAPPING_SCALED
         else:
             self.used_sokoban_symbols_mapping = self.SOKOBAN_SYMBOLS_MAPPING
+        self.disable_map_rotation = disable_map_rotation
 
         # TODO: is Env.action_space and Env.observation.space needed?
         # below commented code is modelled on https://github.com/mpSchrader/gym-sokoban/blob/master/gym_sokoban/envs/sokoban_env.py
@@ -172,6 +175,23 @@ class SokobanEnv(Env):
     def get_maps_specified_in_file():
         with open(SokobanEnv.SPECIFIC_MAPS_FILE_NAME, 'r') as f:
             specified_maps = f.readlines()
+        # check if specified maps exist
+        not_found_maps = []
+        for lvl in specified_maps:
+            map_found = False
+            for file in os.listdir(SokobanGame.PATH_TO_LEVELS):
+                if file.upper() == lvl.upper():
+                    map_found = True
+                    break
+            if not map_found:
+                print("[WARNING] Map " + lvl + " not found in level directory " + SokobanGame.PATH_TO_LEVELS)
+                not_found_maps.append(lvl)
+        # remove not existing maps
+        specified_maps = [el for el in specified_maps if el not in not_found_maps]
+        if len(specified_maps) == 0:
+            comm = "No existing maps found in file " + SokobanEnv.SPECIFIC_MAPS_FILE_NAME
+            print("[ERROR] " + comm)
+            raise ValueError(comm)
         return specified_maps
 
     @staticmethod
@@ -189,6 +209,7 @@ class SokobanEnv(Env):
         # replace chars with numbers
         for symbol in original_sokoban_elements:
             map_copy[map_to_convert == symbol] = self.used_sokoban_symbols_mapping[symbol]
+        # calculate upper-left position to which paste the map
         if put_map_in_the_center:
             row_middle_of_fixed_size_matrix = int(SokobanEnv.GAME_SIZE_ROWS / 2)
             col_middle_of_fixed_size_matrix = int(SokobanEnv.GAME_SIZE_COLS / 2)
@@ -363,7 +384,10 @@ class SokobanEnv(Env):
         chosen_map = SokobanGame.PATH_TO_LEVELS + random.choice(self.available_maps)
         self.current_level_name = chosen_map
         self.add_one_to_stats_dict(stats_dict=self.map_frequency_stats, key=self.current_level_name)
-        chosen_rotation = random.choice(self.available_map_rotations)
+        if self.disable_map_rotation:
+            chosen_rotation = SokobanGame.MAP_ROTATION_NONE
+        else:
+            chosen_rotation = random.choice(self.available_map_rotations)
 
         # create SokobanGame object
         rew_impl = RewardSystem()
@@ -423,8 +447,8 @@ class SokobanEnv(Env):
          If we want another format (eg. additional representation of game map in additional channels) this method needs to be changed."""
         if self.use_more_than_one_channel:  # there are more channels already provided (eg. by memory window_length) so we don't need to add artificial one
             return self.env_game_state
-        else:
-            return np.expand_dims(self.env_game_state, axis=2)  # if we have no channels we still need to make an artificial one for keras to work
+        else:   # axis=0 to make behavior consistent with window_length - channels_first
+            return np.expand_dims(self.env_game_state, axis=0)  # if we have no channels we still need to make an artificial one for keras to work
 
     # ------------------ stats utils --------------------------------------------------------------------------------------------------------------------------------
 

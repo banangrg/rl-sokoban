@@ -52,7 +52,12 @@ if __name__ == "__main__":
                      use_bugged_dict_entries=False,
                      save_file_name='basicDQN_game_',
                      save_every_game_to_file=False,
-                     map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL)
+                     map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
+                     use_more_than_one_channel=False,
+                     scale_rewards=False,
+                     scale_range=(-1, 1),
+                     use_scaled_env_representation=False,
+                     disable_map_rotation=False)
 
     print("[INFO] Building model...")
     print("Environment size is: rows: " + str(env.GAME_SIZE_ROWS) + " cols: " + str(env.GAME_SIZE_COLS))
@@ -62,13 +67,13 @@ if __name__ == "__main__":
     # TODO: maybe MaxPoolingND and Dropout not necessary? Or modify other params?
     if CONV_LAYER_DIMENSION == 1:
         model = Sequential()
-        model.add(Conv1D(int(input_rows / 2), kernel_size=4, activation='relu', input_shape=(input_rows, input_cols)))
+        model.add(Conv1D(int(input_rows / 2), kernel_size=4, activation='relu', input_shape=(WINDOW_LENGTH, input_rows, input_cols), data_format='channels_first'))
         model.add(MaxPooling1D(pool_size=2))
 
-        model.add(Conv1D(input_rows, kernel_size=3, activation='relu'))
+        model.add(Conv1D(input_rows, kernel_size=3, activation='relu', data_format='channels_first'))
         model.add(MaxPooling1D(pool_size=2))
 
-        model.add(Conv1D(input_rows, kernel_size=3, activation='relu'))
+        model.add(Conv1D(input_rows, kernel_size=3, activation='relu', data_format='channels_first'))
         model.add(MaxPooling1D(pool_size=2))
 
         model.add(Flatten())
@@ -77,13 +82,13 @@ if __name__ == "__main__":
         model.add(Dense(NUMBER_OF_POSSIBLE_ACTIONS, activation='linear'))
     elif CONV_LAYER_DIMENSION == 2:
         model = Sequential()
-        model.add(Conv2D(int(input_rows / 2), kernel_size=(4, 4), activation='relu',input_shape=(input_rows, input_cols, 1)))
+        model.add(Conv2D(int(input_rows / 2), kernel_size=(4, 4), activation='relu',input_shape=(WINDOW_LENGTH, input_rows, input_cols, 1), data_format='channels_first'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
 
-        model.add(Conv2D(input_rows, kernel_size=(3, 3), activation='relu'))
+        model.add(Conv2D(input_rows, kernel_size=(3, 3), activation='relu', data_format='channels_first'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
 
-        model.add(Conv2D(input_rows, kernel_size=(3, 3), activation='relu'))
+        model.add(Conv2D(input_rows, kernel_size=(3, 3), activation='relu', data_format='channels_first'))
         model.add(MaxPooling2D(pool_size=(2, 2)))
 
         model.add(Flatten())
@@ -146,9 +151,10 @@ if __name__ == "__main__":
     env.save_game_stats_to_file(base_name=str(BASE_WEIGHTS_FILE_NAME + "_" + str(TOTAL_NUMBER_OF_STEPS)))
     print("Done saving stats")
 
+    end_time = time.time()
+
     show_reward_plot(training_history, plot_title="BasicDQN")
 
-    end_time = time.time()
     execution_time = end_time - start_time
     print(" >>>>>> ALL DONE. It took " + str(execution_time) + " seconds = " + str(execution_time / 60.0) + " minutes = " + str((execution_time / 60.0) / 60.0) + " hours")
     sys.exit(0)     # to free process memory immediately
