@@ -21,7 +21,7 @@ BASE_WEIGHTS_FILE_NAME = "dqn_v1"
 
 NUMBER_OF_POSSIBLE_ACTIONS = 4
 MEMORY_LIMIT = 1 * (10 ** 6)
-TOTAL_NUMBER_OF_STEPS = 1 * (10 ** 6)               # basic minimum is said to be 10 000 000                                                    <<<
+TOTAL_NUMBER_OF_STEPS = 6 * (10 ** 6)               # basic minimum is said to be 10 000 000                                                    <<<
 NUMBER_OF_STEPS_FOR_EXPLORATION = 1 * (10 ** 6)
 WINDOW_LENGTH = 1   # we dont need to have sense of directional heading and speed in Sokoban so WINDOW_LENGTH = 1 would be a natural choice
 VERBOSITY_LEVEL = 1
@@ -33,7 +33,7 @@ ENV_SIZE_COLS = 32
 VERBOSITY_1_LOGGER_INTERVAL = 10000
 
 NUMBER_OF_INNER_CONVOLUTIONS = 2    # default 2                                                                                                 <<<
-HIDDEN_ACTIVATION = 'selu'      # default 'selu'                                                                                                <<<
+HIDDEN_ACTIVATION = 'relu'      # default 'selu'                                                                                                <<<
 CONV_LAYER_SIZE_BASE = int(ENV_SIZE_ROWS)      # default int(ENV_SIZE_ROWS)
 FIRST_CONV_KERNEL_SIZE = (4, 4)     # default (4, 4)                                                                                            <<<
 
@@ -43,7 +43,7 @@ EPISODE_LENGTH_OFFSET_IN_ENV_INIT = 0     # default 0
 MAX_EPISODE_STEPS_IN_FIT_METHOD = 20000     # default 20000
 
 GAMMA = 0.99       # default 0.99
-MEMORY_REPLAY_BATCH_SIZE = 32   # default 32
+MEMORY_REPLAY_BATCH_SIZE = 96   # default 32
 
 DO_LOAD_WIEGHTS = False
 WEIGHTS_FILE_NAME = 'test_weights.h5f'
@@ -65,9 +65,9 @@ def make_custom_model():
     custom_model.add(Flatten())
     custom_model.add(Dense(512))
     custom_model.add(Activation(HIDDEN_ACTIVATION))
-    # model.add(Dropout(0.2))
-    custom_model.add(Dense(NUMBER_OF_POSSIBLE_ACTIONS))
-    #custom_model.add(MaxoutDense(NUMBER_OF_POSSIBLE_ACTIONS, nb_feature=4))                                                                    # <<<
+    # custom_model.add(Dropout(0.2))
+    #custom_model.add(Dense(NUMBER_OF_POSSIBLE_ACTIONS))
+    custom_model.add(MaxoutDense(NUMBER_OF_POSSIBLE_ACTIONS, nb_feature=4))                                                                    # <<<
     custom_model.add(Activation('linear'))
     #custom_model.add(Activation('softmax'))
 
@@ -114,8 +114,8 @@ if __name__ == "__main__":
     print("[INFO] Building DQNAgent...")
     basic_memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGTH)
 
-    action_choice_policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.05, nb_steps=NUMBER_OF_STEPS_FOR_EXPLORATION)
-    #action_choice_policy = BoltzmannQPolicy(tau=1., clip=(-500., 500.))
+    #action_choice_policy = LinearAnnealedPolicy(EpsGreedyQPolicy(), attr='eps', value_max=1., value_min=.1, value_test=.05, nb_steps=NUMBER_OF_STEPS_FOR_EXPLORATION)
+    action_choice_policy = BoltzmannQPolicy(tau=1., clip=(-500., 500.))
 
     dqn = DQNAgent(model=model, nb_actions=NUMBER_OF_POSSIBLE_ACTIONS, policy=action_choice_policy, memory=basic_memory,
                    processor=bugfix_processor, batch_size=MEMORY_REPLAY_BATCH_SIZE,
