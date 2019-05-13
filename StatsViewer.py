@@ -6,10 +6,6 @@ import matplotlib.pyplot as plt
 from SokobanGame import SokobanGame
 
 
-PLOTS_WIDTH = 25   # in inches - due to matplotlib
-PLOTS_HEIGHT = 10  # in inches
-
-
 def str_to_bool(string: str):
     if string == 'True':
         return True
@@ -38,14 +34,23 @@ class GameStatsEntry:
             msg += "Loss"
         return msg
 
+    def get_str_with_new_lines(self):
+        msg = "Index: " + str(self.index) + "\n" + self.map_name + "\nRotation: " + str(self.map_rotation) + \
+              "\nStep count: " + str(self.number_of_steps) + ", Reward: " + "{0:.2f}".format(self.final_reward) + "\n"
+        if self.was_victory:
+            msg += "Victory"
+        else:
+            msg += "Loss"
+        return msg
+
 
 def read_all_game_stats_entries_from_file(file_name: str):
     stats_entry_counter = 0
     stats_entries = []
 
     with open(file_name, mode='r') as csv_file:
-        csv_Rdr = csv.reader(csv_file, delimiter=';')
-        for row in csv_Rdr:
+        csv_reader = csv.reader(csv_file, delimiter=';')
+        for row in csv_reader:
             game_entry = GameStatsEntry(index=stats_entry_counter,
                                         map_name=row[0],
                                         map_rotation=int(row[1]),
@@ -56,6 +61,13 @@ def read_all_game_stats_entries_from_file(file_name: str):
             stats_entry_counter += 1
 
     return stats_entries, stats_entry_counter
+
+
+def get_game_stats_entry_by_index(entry_list, index: int):
+    for entry in entry_list:
+        if entry.index == index:
+            return entry
+    return None
 
 
 # python StatsViewer.py -f "game_stats/game_stats_dqn_v1_6000000_2019-05-12_04-52-04.txt" -m "VERY_SIMPLE_level.txt" -n 2000
@@ -72,12 +84,25 @@ if __name__ == "__main__":
     args_parser.add_argument("-l", "--list_maps", help="if set lists all available map names",
                              action="store_true",
                              dest="list_maps")
+    args_parser.add_argument("-d", "--detailed",
+                             help="if set there will be points with hover action on figures, will look bad without some reasonabe -n value",
+                             action="store_true",
+                             dest="detailed")
+    args_parser.add_argument("-wt", "--width", type=int,
+                             help="width of figure window in inches",
+                             dest="fig_width", default=14)
+    args_parser.add_argument("-ht", "--height", type=int,
+                             help="height of figure window in inches",
+                             dest="fig_height", default=6)
     args = args_parser.parse_args()
 
     path_to_stats_file = args.stats_file
     map_name = args.map_name
     number_of_last_entries = args.n_last
     list_maps = args.list_maps
+    detailed_figures = args.detailed
+    figure_width = args.fig_width
+    figure_height = args.fig_height
 
     use_number_of_last_entries = False
     if number_of_last_entries > 0:
@@ -93,50 +118,108 @@ if __name__ == "__main__":
 
     entries, entry_counter = read_all_game_stats_entries_from_file(path_to_stats_file)
 
-    # use onyl n last entries (-n option)
+    # use only n last entries (-n option)
     if number_of_last_entries > entry_counter:
         print("[WARNING] n_last bigger than number of all entries - using all entries")
         use_number_of_last_entries = False
     if use_number_of_last_entries:
         entries = entries[-number_of_last_entries:]
 
-    print("====== OVERVIEW STATS (ALL MAPS) =======")
     number_of_entries_after_n_last = len(entries)
-    print("Loaded ", entry_counter, " entries from file ", path_to_stats_file)
     victories = [el for el in entries if el.was_victory]
     number_of_victories = len(victories)
+    print("====== OVERVIEW STATS (ALL MAPS) =======")
+    print("Loaded ", entry_counter, " entries from file ", path_to_stats_file)
     print("Total from " + str(number_of_entries_after_n_last) + " last games: " + str(number_of_victories) + "/" +
           str(number_of_entries_after_n_last) + " victories - " + str(number_of_victories / number_of_entries_after_n_last * 100.0) + "%")
 
     # filter on map name
-    print("====== SPECIFIED MAP STATS =======")
     filtered_entries = [el for el in entries if map_name.upper() in el.map_name.upper()]
     number_of_filtered_entries = len(filtered_entries)
+    filtered_victories = [el for el in filtered_entries if el.was_victory]
     if number_of_filtered_entries == 0:
         print("[ERROR] No games found on maps matching name: " + map_name)
         raise ValueError("Invalid map name specified")
-    filtered_victories = [el for el in filtered_entries if el.was_victory]
+    print("====== SPECIFIED MAP STATS =======")
     print("Found " + str(len(filtered_entries)) + " games played on map matching name: " + map_name)
-    print(str(len(filtered_victories)) + "/" + str(number_of_filtered_entries) + " victories - " + str(len(filtered_victories) / number_of_filtered_entries * 100.0) + "%")
+    print(str(len(filtered_victories)) + "/" + str(number_of_filtered_entries) + " victories - " +
+          str(len(filtered_victories) / number_of_filtered_entries * 100.0) + "%")
 
+    # get values for plotting
     plot_x_values = np.arange(1, number_of_filtered_entries + 1)
     plot_y_values_rewards = [el.final_reward for el in filtered_entries]
     plot_y_values_steps = [el.number_of_steps for el in filtered_entries]
 
-    plt.rcParams['figure.figsize'] = (PLOTS_WIDTH, PLOTS_HEIGHT)
+    # map x values to indexes of objects
+    x_to_index = {}
+    for i in range(number_of_filtered_entries):
+        x_to_index[i + 1] = filtered_entries[i].index
 
-    plt.subplot(1, 2, 1)
-    plt.plot(plot_x_values, plot_y_values_rewards, 'g')
-    plt.axhline(y=0.0, color='r', linestyle='--', linewidth=1.0)
-    plt.title('Rewards')
-    plt.ylabel('Reward for episode')
-    plt.xlabel('Number of episode')
+    # configure figure window size
+    plt.rcParams['figure.figsize'] = (figure_width, figure_height)
 
-    plt.subplot(1, 2, 2)
-    plt.plot(plot_x_values, plot_y_values_steps, 'b')
-    plt.axhline(y=0.0, color='r', linestyle='--', linewidth=1.0)
-    plt.title('Number of steps for one episode')
-    plt.ylabel('Number of steps')
-    plt.xlabel('Number of episode')
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+
+    # rewards
+    if detailed_figures:
+        rewards_points = ax1.scatter(plot_x_values, plot_y_values_rewards, marker='.', color='green')
+    ax1.plot(plot_x_values, plot_y_values_rewards, color='green')
+    ax1.axhline(y=0.0, color='r', linestyle='--', linewidth=1.0)
+    ax1.set_title('Rewards')
+    ax1.set_ylabel('Reward for episode')
+    ax1.set_xlabel('Number of episode')
+
+    # steps for episode
+    if detailed_figures:
+        steps_points = ax2.scatter(plot_x_values, plot_y_values_steps, marker='.', color='blue')
+    ax2.plot(plot_x_values, plot_y_values_steps, color='blue')
+    ax2.axhline(y=0.0, color='r', linestyle='--', linewidth=1.0)
+    ax2.set_title('Number of steps for one episode')
+    ax2.set_ylabel('Number of steps')
+    ax2.set_xlabel('Number of episode')
+
+    # annotations on mouse hover on point
+    if detailed_figures:
+        annot_rewards = ax1.annotate("", xy=(0,0), xytext=(20,20),textcoords="offset points",
+                                     bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
+        annot_steps = ax2.annotate("", xy=(0, 0), xytext=(20, 20), textcoords="offset points",
+                                   bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
+        annot_rewards.set_visible(False)
+        annot_steps.set_visible(False)
+
+        # make annotations on top of figures
+        fig.texts.append(ax1.texts.pop())
+        fig.texts.append(ax2.texts.pop())
+
+        def update_annot(ind, scatter_points, annot_obj, fig_obj):
+            pos = scatter_points.get_offsets()[ind["ind"][0]]
+            annot_obj.xy = pos
+            index_of_stats_obj = x_to_index[int(pos[0])]    # first element of pos is x coord
+            annot_msg = get_game_stats_entry_by_index(filtered_entries, index_of_stats_obj).get_str_with_new_lines()
+            annot_obj.set_text(annot_msg)
+            annot_obj.get_bbox_patch().set_alpha(0.99)  # non-transparent background
+            annot_obj.set_visible(True)
+            fig_obj.canvas.draw_idle()
+
+        def hover(event):
+            vis1 = annot_rewards.get_visible()
+            vis2 = annot_steps.get_visible()
+            cont1, ind1 = rewards_points.contains(event)
+            cont2, ind2 = steps_points.contains(event)
+            if cont1:
+                update_annot(ind1, rewards_points, annot_rewards, fig)
+            if cont2:
+                update_annot(ind2, steps_points, annot_steps, fig)
+            else:
+                if vis1:
+                    annot_rewards.set_visible(False)
+                    fig.canvas.draw_idle()
+                if vis2:
+                    annot_steps.set_visible(False)
+                    fig.canvas.draw_idle()
+
+        fig.canvas.mpl_connect("motion_notify_event", hover)
 
     plt.show()
