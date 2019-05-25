@@ -93,18 +93,6 @@ class SokobanGame:
     PATH_TO_LEVELS = 'levels/'
     PATH_TO_MANUAL_GAMES = 'manual_games/'
 
-    # instance variables
-    current_level = None
-    reward_system = None
-    move_counter = 0
-    total_reward = 0.0
-    moves_made = []
-    rewards_received = []
-    game_timeout = None
-    path_to_current_level = None
-    is_manual = None
-    map_rotation = None
-
     def __init__(self, path_to_level: str, reward_impl: AbstractRewardSystem, loss_timeout: int = DEFAULT_TIMEOUT,
                  manual_play: bool = True, map_rotation: int = MAP_ROTATION_NONE):
         """ Initializes single game. Requires path to file with level and a reward system (ex. basic RewardSystem()).
@@ -122,19 +110,15 @@ class SokobanGame:
         self.reward_system = reward_impl
         self.game_timeout = loss_timeout
         self.is_manual = manual_play
+        self.move_counter = 0
+        self.total_reward = 0.0
+        self.moves_made = []
+        self.rewards_received = []
         if map_rotation not in [self.MAP_ROTATION_NONE, self.MAP_ROTATION_90, self.MAP_ROTATION_180, self.MAP_ROTATION_270]:
             raise Exception("Invalid map rotation option!")
         self.map_rotation = map_rotation
         # rotate map according to setting
         self.current_level = np.rot90(self.current_level, k=map_rotation)
-
-        self.reinitialize_stats_variables()
-
-    def reinitialize_stats_variables(self):
-        self.move_counter = 0
-        self.total_reward = 0.0
-        self.moves_made = []
-        self.rewards_received = []
 
     @staticmethod
     def get_level(filepath: str):
@@ -426,6 +410,23 @@ class SokobanGame:
             f.write(str(self.map_rotation))
 
         return filename
+
+    @staticmethod
+    def get_game_from_file(file_name: str):
+        with open(file_name, "r") as f:
+            read_lines = f.readlines()
+
+        # use rstrip() to remove new line characters at the end of strings read by f.readlines()
+        map_name = read_lines[0].rstrip()
+        moves = read_lines[1].rstrip()
+        rewards = read_lines[2].rstrip()
+        total_reward = read_lines[3].rstrip()
+        if len(read_lines) > 4:
+            map_rotation = read_lines[4].rstrip()
+        else:   # if rotation not specified assume that there is no rotation
+            map_rotation = SokobanGame.MAP_ROTATION_NONE
+
+        return map_name, moves, rewards, total_reward, map_rotation
 
     def check_and_process_game_end(self, save_record_to_file: bool = True):
         """ To be called after making move, returns True if game is over, False if it is not and returns final reward - 0 if not game over yet  """

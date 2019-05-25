@@ -17,6 +17,9 @@ Sokoban game with RL based playing
         contains basic example of working Deep Q Learning agent using SokobanEnv class as environment <br/>
         with basic statistics.
     <li>
+    TestDQN.py: <br/>
+        contains DQN agent used for testing different network architectures and parameters. <br/>
+    <li>
     DQNAgentUtils.py: <br/>
         contains common utility functions for DQN agents such as saving model summary and weights or plotting rewards <br/>
     <li>
@@ -31,4 +34,7 @@ Sokoban game with RL based playing
     <li>
     game_stats: <br/>
         short records of each game played by DQN a agent and eeven shorter summary of games on each map <br/>
+    <li>
+    MemoryLoader.py <br/>
+        ccontains class that allows loading saved games from files into agents memory
 <ul/>
