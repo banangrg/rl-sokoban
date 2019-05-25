@@ -2,7 +2,7 @@ import sys
 import time
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Flatten, Conv2D, Dense, MaxPooling2D, Dropout, Activation, MaxoutDense
+from keras.layers import Flatten, Conv2D, Dense, MaxPooling2D, Dropout, Activation, MaxoutDense, LeakyReLU, PReLU
 from keras.optimizers import Adam, Nadam, SGD, RMSprop
 from rl.agents.dqn import DQNAgent
 from rl.policy import EpsGreedyQPolicy, LinearAnnealedPolicy, BoltzmannQPolicy
@@ -10,6 +10,7 @@ from rl.memory import SequentialMemory
 from rl.callbacks import TrainEpisodeLogger, ModelIntervalCheckpoint
 from SokobanEnv import SokobanEnv
 from SokobanGame import SokobanGame
+from MemoryLoader import SokobanManualGameMemoryLoader
 from DQNAgentUtils import DimensionKillerProcessor
 from DQNAgentUtils import save_agent_weights_and_summary_to_file, show_reward_plot, load_agent_weights
 
@@ -32,7 +33,7 @@ ENV_SIZE_COLS = 32
 
 VERBOSITY_1_LOGGER_INTERVAL = 10000
 
-NUMBER_OF_INNER_CONVOLUTIONS = 2    # default 2                                                                                                 <<<
+NUMBER_OF_INNER_CONVOLUTIONS = 4    # default 2                                                                                                 <<<
 HIDDEN_ACTIVATION = 'relu'      # default 'selu'                                                                                                <<<
 CONV_LAYER_SIZE_BASE = int(ENV_SIZE_ROWS)      # default int(ENV_SIZE_ROWS)
 FIRST_CONV_KERNEL_SIZE = (4, 4)     # default (4, 4)                                                                                            <<<
@@ -48,23 +49,37 @@ MEMORY_REPLAY_BATCH_SIZE = 96   # default 32
 DO_LOAD_WIEGHTS = False
 WEIGHTS_FILE_NAME = 'test_weights.h5f'
 
+DO_LOAD_GAMES_FROM_FILES = False
+LOADED_GAMES_MEMORY_LIMIT = MEMORY_LIMIT   # default = MEMORY_LIMIT
+
+
+def get_hidden_layer_activation(option):
+    """ To allow keras advanced activations like LeakyReLU or PReLU """
+    if option == 'leakyrelu':
+        return LeakyReLU()
+    elif option == 'prelu':
+        return PReLU()
+    else:
+        return Activation(option)
+
 
 def make_custom_model():
     custom_model = Sequential()
     # channels are always first
     custom_model.add(Conv2D(int(CONV_LAYER_SIZE_BASE / 2), kernel_size=FIRST_CONV_KERNEL_SIZE, input_shape=(WINDOW_LENGTH, input_rows, input_cols), data_format='channels_first'))
-    custom_model.add(Activation(HIDDEN_ACTIVATION))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
     # model.add(MaxPooling2D(pool_size=(2, 2)))
 
     for i in range(NUMBER_OF_INNER_CONVOLUTIONS):
         custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(3, 3), data_format='channels_first'))
-        custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(3, 3)))
-        custom_model.add(Activation(HIDDEN_ACTIVATION))
+        #custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(3, 3), data_format='channels_first'))
+        custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+        # custom_model.add(LeakyReLU())
         # model.add(MaxPooling2D(pool_size=(2, 2)))
 
     custom_model.add(Flatten())
     custom_model.add(Dense(512))
-    custom_model.add(Activation(HIDDEN_ACTIVATION))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
     # custom_model.add(Dropout(0.2))
     #custom_model.add(Dense(NUMBER_OF_POSSIBLE_ACTIONS))
     custom_model.add(MaxoutDense(NUMBER_OF_POSSIBLE_ACTIONS, nb_feature=4))                                                                    # <<<
@@ -72,6 +87,45 @@ def make_custom_model():
     #custom_model.add(Activation('softmax'))
 
     return custom_model
+
+
+def make_custom_model_2():
+    custom_model = Sequential()
+    custom_model.add(Conv2D(int(CONV_LAYER_SIZE_BASE / 2), kernel_size=(7, 7), strides=2, input_shape=(WINDOW_LENGTH, input_rows, input_cols), data_format='channels_first'))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(5, 5), data_format='channels_first'))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(3, 3), data_format='channels_first'))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(Flatten())
+    custom_model.add(Dense(512))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(MaxoutDense(NUMBER_OF_POSSIBLE_ACTIONS, nb_feature=4))  # <<<
+    custom_model.add(Activation('linear'))
+
+    return custom_model
+
+
+def get_new_sokoban_env():
+    SokobanEnv.configure_env_size(new_rows=ENV_SIZE_ROWS, new_cols=ENV_SIZE_COLS)
+    # SokobanEnv.configure_difficulty_games_count_requirement(simple_threshold=1000,
+    #                                                        medium_threshold=3000,
+    #                                                        hard_threshold=15000,
+    #                                                        very_hard_threshold=30000)
+    agent_env = SokobanEnv(game_timeout=SokobanGame.DEFAULT_TIMEOUT + EPISODE_LENGTH_OFFSET_IN_ENV_INIT,
+                           put_map_in_the_center=True,
+                           info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
+                           use_bugged_dict_entries=False,
+                           save_file_name='test_DQN_game_',
+                           save_every_game_to_file=False,
+                           map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
+                           use_more_than_one_channel=need_more_than_one_channel,
+                           scale_rewards=DO_SCALE_REWARDS,
+                           scale_range=(-1, 1),
+                           use_scaled_env_representation=DO_SCALE_ENV,
+                           disable_map_rotation=False)
+
+    return agent_env
 
 
 if __name__ == "__main__":
@@ -85,23 +139,7 @@ if __name__ == "__main__":
         need_more_than_one_channel = True
         bugfix_processor = None
 
-    SokobanEnv.configure_env_size(new_rows=ENV_SIZE_ROWS, new_cols=ENV_SIZE_COLS)
-    #SokobanEnv.configure_difficulty_games_count_requirement(simple_threshold=1000,
-    #                                                        medium_threshold=3000,
-    #                                                        hard_threshold=15000,
-    #                                                        very_hard_threshold=30000)
-    env = SokobanEnv(game_timeout=SokobanGame.DEFAULT_TIMEOUT + EPISODE_LENGTH_OFFSET_IN_ENV_INIT,
-                     put_map_in_the_center=True,
-                     info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
-                     use_bugged_dict_entries=False,
-                     save_file_name='test_DQN_game_',
-                     save_every_game_to_file=False,
-                     map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
-                     use_more_than_one_channel=need_more_than_one_channel,
-                     scale_rewards=DO_SCALE_REWARDS,
-                     scale_range=(-1, 1),
-                     use_scaled_env_representation=DO_SCALE_ENV,
-                     disable_map_rotation=False)
+    env = get_new_sokoban_env()
 
     print("[INFO] Building model...")
     print("Environment size is: rows: " + str(env.GAME_SIZE_ROWS) + " cols: " + str(env.GAME_SIZE_COLS))
@@ -130,6 +168,10 @@ if __name__ == "__main__":
     if DO_LOAD_WIEGHTS:
         print("[INFO] Loading weights from file: " + WEIGHTS_FILE_NAME)
         load_agent_weights(dqn, WEIGHTS_FILE_NAME)
+
+    if DO_LOAD_GAMES_FROM_FILES:
+        game_record_loader = SokobanManualGameMemoryLoader(agent_memory=basic_memory, memory_limit=LOADED_GAMES_MEMORY_LIMIT)
+        game_record_loader.load_all_games()
 
     print("[INFO] Training...")
     training_history = dqn.fit(env, nb_steps=TOTAL_NUMBER_OF_STEPS, verbose=VERBOSITY_LEVEL,

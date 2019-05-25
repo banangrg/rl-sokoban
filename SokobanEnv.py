@@ -35,6 +35,7 @@ class SokobanEnv(Env):
     USE_ALL_MAPS_ALWAYS = 1
     USE_MAPS_DIFFICULTY_LEVEL = 2
     USE_MAPS_FROM_FILE = 3
+    USE_SINGLE_SPECIFIED_MAP = 4
 
     # TODO: maybe these dicts need adjusting?
     ACTIONS = {
@@ -42,6 +43,20 @@ class SokobanEnv(Env):
         1: SokobanGame.MOVE_RIGHT,
         2: SokobanGame.MOVE_UP,
         3: SokobanGame.MOVE_DOWN
+    }
+
+    LRUD_TO_ACTIONS = {
+        SokobanGame.MOVE_LEFT   : 0,
+        SokobanGame.MOVE_RIGHT  : 1,
+        SokobanGame.MOVE_UP     : 2,
+        SokobanGame.MOVE_DOWN   : 3
+    }
+
+    WASD_TO_ACTIONS = {
+        'A': 0,
+        'D': 1,
+        'W': 2,
+        'S': 3
     }
 
     MAX_SYMBOL_VALUE = 224.0
@@ -74,51 +89,24 @@ class SokobanEnv(Env):
 
     ENV_STATE_INIT_VALUE = -999.0
 
-    reward_range = (RewardSystem.get_reward_for_loss(), RewardSystem.get_reward_for_victory())
+    REWARD_RANGE = (RewardSystem.get_reward_for_loss(), RewardSystem.get_reward_for_victory())
 
-    env_game_state = None
-    available_maps = []     # paths to maps
-    available_map_rotations = [SokobanGame.MAP_ROTATION_NONE, SokobanGame.MAP_ROTATION_90, SokobanGame.MAP_ROTATION_180, SokobanGame.MAP_ROTATION_270]
-
-    sokoban_game = None     # SokobanGame object
-    game_timeout = 0
-    map_in_the_center_of_fixed_size_matrix = True
-
-    print_info_game_count = 0
-    games_counter = 0
-    victory_counter = 0
-    temp_victory_counter = 0
-
-    enable_debug_printing = False
-    use_bugged_dict_entries = True
-
-    map_frequency_stats = {}
-    map_frequency_victory_stats = {}
-    game_stats = []
-    save_file_name = ""
-    save_every_game_to_file = False
-    map_selection_option = 0
-    current_level_name = ""
-    use_more_than_one_channel = False
-
-    scale_rewards = False
-    reward_scaler = None
-    scale_range = (0, 1)
-    used_sokoban_symbols_mapping = None
-
-    disable_map_rotation = False
+    AVAILABLE_MAP_ROTATIONS = [SokobanGame.MAP_ROTATION_NONE, SokobanGame.MAP_ROTATION_90, SokobanGame.MAP_ROTATION_180, SokobanGame.MAP_ROTATION_270]
 
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
                  info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True,
                  save_file_name: str = 'basicDQN_game_', save_every_game_to_file: bool = False,
                  map_choice_option: int = 0, use_more_than_one_channel: bool = False, scale_rewards: bool = False,
-                 scale_range=(-1, 1), use_scaled_env_representation: bool = False, disable_map_rotation: bool = False):
+                 scale_range=(-1, 1), use_scaled_env_representation: bool = False, disable_map_rotation: bool = False,
+                 specific_map: str = "", use_specific_rotation: bool = False, specific_rotation: int = 0):
         """ Default env size is 32x32.
         Map choice options: \n
         USE_ONLY_SIMPLE_AND_VERY_SIMPLE_MAPS = 0 (default)\n
         USE_ALL_MAPS_ALWAYS = 1  - does not filter maps by difficulty, could be used to test trained models \n
         USE_MAPS_DIFFICULTY_LEVEL = 2  - will use SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES to determine when to use which maps \n
         USE_MAPS_FROM_FILE = 3 - will use only maps specified in file levels/_specific_maps_selection.txt (specified WITHOUT levels/) \n
+        USE_SINGLE_SPECIFIED_MAP = 4 - will use only the map specified in parameter specific_map (specified WITHOUT levels/) \n
+
         IMPORTANT NOTE: \n
         If window_length of Agent is not equal to 1 than use_more_than_one_channel MUST be set to True!
         """
@@ -135,9 +123,23 @@ class SokobanEnv(Env):
         self.use_more_than_one_channel = use_more_than_one_channel
         self.scale_rewards = scale_rewards
         self.scale_range = scale_range
+        self.map_frequency_stats = {}
+        self.map_frequency_victory_stats = {}
+        self.game_stats = []
+        self.save_file_name = ""
+        self.current_level_name = ""
+        self.games_counter = 0
+        self.victory_counter = 0
+        self.temp_victory_counter = 0
+        self.sokoban_game = None  # SokobanGame object
+        self.specific_map = specific_map
+        self.use_specific_rotation = use_specific_rotation
+        self.specific_rotation = specific_rotation
         if self.scale_rewards:
             self.reward_scaler = MinMaxScaler(feature_range=self.scale_range)
-            self.reward_scaler.fit(self.get_form_for_scaling(self.reward_range))
+            self.reward_scaler.fit(self.get_form_for_scaling(self.REWARD_RANGE))
+        else:
+            self.reward_scaler = None
         if use_scaled_env_representation:
             self.used_sokoban_symbols_mapping = self.SOKOBAN_SYMBOLS_MAPPING_SCALED
         else:
@@ -343,7 +345,8 @@ class SokobanEnv(Env):
                 self.victory_counter += 1
                 self.temp_victory_counter += 1
                 # add map victory stats
-                self.add_one_to_stats_dict(stats_dict=self.map_frequency_victory_stats, key=self.current_level_name)
+                dict_key = self.get_map_name_for_stats(map_name=self.current_level_name, rotation=self.get_current_level_rotation())
+                self.add_one_to_stats_dict(stats_dict=self.map_frequency_victory_stats, key=dict_key)
             if self.use_bugged_dict_entries:
                 step_info_dict["moves_count"] = self.sokoban_game.move_counter  # this appears to sometimes cause error in keras-rl callback logger - see BasicDQN.py for quick fix
                 step_info_dict["was_victory"] = was_victory
@@ -376,6 +379,10 @@ class SokobanEnv(Env):
             self.available_maps = self.get_all_available_maps()
         elif self.map_selection_option == self.USE_MAPS_FROM_FILE:
             self.available_maps = self.get_maps_specified_in_file()
+        elif self.map_selection_option == self.USE_SINGLE_SPECIFIED_MAP:
+            if not os.path.isfile(SokobanGame.PATH_TO_LEVELS + self.specific_map):
+                raise ValueError("Invalid map name! - specified map does not exist")
+            self.available_maps = [self.specific_map]
         else:   # default
             self.available_maps = self.get_maps_with_prefix("VERY_SIMPLE")
             self.available_maps.extend(self.get_maps_with_prefix("SIMPLE"))
@@ -383,11 +390,15 @@ class SokobanEnv(Env):
         # choose random map from available ones
         chosen_map = SokobanGame.PATH_TO_LEVELS + random.choice(self.available_maps)
         self.current_level_name = chosen_map
-        self.add_one_to_stats_dict(stats_dict=self.map_frequency_stats, key=self.current_level_name)
         if self.disable_map_rotation:
             chosen_rotation = SokobanGame.MAP_ROTATION_NONE
+        elif self.use_specific_rotation:
+            chosen_rotation = self.specific_rotation
         else:
-            chosen_rotation = random.choice(self.available_map_rotations)
+            chosen_rotation = random.choice(self.AVAILABLE_MAP_ROTATIONS)
+
+        dict_key = self.get_map_name_for_stats(map_name=self.current_level_name, rotation=chosen_rotation)
+        self.add_one_to_stats_dict(stats_dict=self.map_frequency_stats, key=dict_key)
 
         # create SokobanGame object
         rew_impl = RewardSystem()
@@ -471,10 +482,10 @@ class SokobanEnv(Env):
             print(stats_for_used_map)
 
     def add_game_stats_entry(self, was_victory: bool):
-        """ Data format: level name, map rotation, bool - was victory, number of moves, total reward """
+        """ Data format: level name + '_' + rotation, map rotation, bool - was victory, number of moves, total reward """
         self.game_stats.append(
-            (self.get_current_level_name(), self.get_current_level_rotation(), was_victory,
-             self.sokoban_game.move_counter, self.sokoban_game.total_reward)
+            (self.get_map_name_for_stats(map_name=self.get_current_level_name(), rotation=self.get_current_level_rotation()),
+             self.get_current_level_rotation(), was_victory, self.sokoban_game.move_counter, self.sokoban_game.total_reward)
         )
 
     def save_game_stats_to_file(self, base_name: str, delimiter: str = ';', file_extension='.txt'):
@@ -513,6 +524,13 @@ class SokobanEnv(Env):
             stats_dict[key] += 1
         else:
             stats_dict[key] = 1
+
+    @staticmethod
+    def get_map_name_for_stats(map_name: str, rotation: int):
+        """ returns name in format PATH_TO_LEVEL_rot_MAP_ROTATION.EXTENSION """
+        map_name_split = str(map_name).split('.')
+        map_name_for_stats = map_name_split[0] + "_rot_" + str(rotation) + "." + map_name_split[1]
+        return map_name_for_stats
 
 
 if __name__ == "__main__":
