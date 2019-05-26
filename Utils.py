@@ -83,3 +83,10 @@ def get_moves_from_record_file(file_name):
     content = file.read()
     lines = content.split("\n")
     return lines[1]
+
+
+def print_game_map(game_map):
+    for row in game_map:
+        for column in row:
+            print(column.value, end="")
+        print("")

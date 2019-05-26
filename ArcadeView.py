@@ -1,6 +1,7 @@
 import arcade
 
 import SobParams as SobParams
+import Utils
 from BlockType import BlockType
 from MoveEnum import MoveEnum
 
@@ -8,6 +9,7 @@ from MoveEnum import MoveEnum
 class ArcadeView(arcade.Window):
 
     def __init__(self, game_map):
+        Utils.set_width_and_height(game_map)
         super().__init__(SobParams.WINDOW_WIDTH, SobParams.WINDOW_HEIGHT, SobParams.TITLE)
 
         self.listeners = []
