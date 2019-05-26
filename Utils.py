@@ -1,10 +1,9 @@
 import sys
+import random
+import bisect
 
 import SobParams as SobParams
 from BlockType import BlockType
-
-
-# from ArcadeView import draw_field_at
 
 
 def generate_example_map():
@@ -90,3 +89,24 @@ def print_game_map(game_map):
         for column in row:
             print(column.value, end="")
         print("")
+
+
+def weighted_choice_b(weights):
+    totals = []
+    running_total = 0
+
+    for w in weights:
+        running_total += w
+        totals.append(running_total)
+
+    rnd = random.random() * running_total
+    return bisect.bisect_right(totals, rnd)
+
+def weighted_choice_king(weights):
+    total = 0
+    winner = 0
+    for i, w in enumerate(weights):
+        total += w
+        if random.random() * total < w:
+            winner = i
+    return winner
