@@ -34,7 +34,7 @@ ENV_SIZE_COLS = 32
 VERBOSITY_1_LOGGER_INTERVAL = 10000
 
 NUMBER_OF_INNER_CONVOLUTIONS = 4    # default 2                                                                                                 <<<
-HIDDEN_ACTIVATION = 'relu'      # default 'selu'                                                                                                <<<
+HIDDEN_ACTIVATION = 'prelu'      # default 'selu'                                                                                                <<<
 CONV_LAYER_SIZE_BASE = int(ENV_SIZE_ROWS)      # default int(ENV_SIZE_ROWS)
 FIRST_CONV_KERNEL_SIZE = (4, 4)     # default (4, 4)                                                                                            <<<
 
@@ -51,6 +51,8 @@ WEIGHTS_FILE_NAME = 'test_weights.h5f'
 
 DO_LOAD_GAMES_FROM_FILES = False
 LOADED_GAMES_MEMORY_LIMIT = MEMORY_LIMIT   # default = MEMORY_LIMIT
+
+NUMBER_OF_STEPS_FOR_WARMUP = 50000     # default 50000 - number of steps for simple loading into memory
 
 
 def get_hidden_layer_activation(option):
@@ -157,8 +159,8 @@ if __name__ == "__main__":
 
     dqn = DQNAgent(model=model, nb_actions=NUMBER_OF_POSSIBLE_ACTIONS, policy=action_choice_policy, memory=basic_memory,
                    processor=bugfix_processor, batch_size=MEMORY_REPLAY_BATCH_SIZE,
-                   enable_double_dqn=True, enable_dueling_network=True, nb_steps_warmup=50000, gamma=GAMMA,
-                   target_model_update=10000, train_interval=4, delta_clip=1.)
+                   enable_double_dqn=True, enable_dueling_network=True, nb_steps_warmup=NUMBER_OF_STEPS_FOR_WARMUP,
+                   gamma=GAMMA, target_model_update=10000, train_interval=4, delta_clip=1.)
 
     opt = Adam(lr=.00025)       # default
     #opt = Nadam(lr=.0005)
@@ -170,6 +172,7 @@ if __name__ == "__main__":
         load_agent_weights(dqn, WEIGHTS_FILE_NAME)
 
     if DO_LOAD_GAMES_FROM_FILES:
+        print("[INFO] Loading recored games. Thisa may take a while...")
         game_record_loader = SokobanManualGameMemoryLoader(agent_memory=basic_memory, memory_limit=LOADED_GAMES_MEMORY_LIMIT)
         game_record_loader.load_all_games()
 

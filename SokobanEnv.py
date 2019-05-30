@@ -91,7 +91,7 @@ class SokobanEnv(Env):
 
     REWARD_RANGE = (RewardSystem.get_reward_for_loss(), RewardSystem.get_reward_for_victory())
 
-    AVAILABLE_MAP_ROTATIONS = [SokobanGame.MAP_ROTATION_NONE, SokobanGame.MAP_ROTATION_90, SokobanGame.MAP_ROTATION_180, SokobanGame.MAP_ROTATION_270]
+    AVAILABLE_MAP_ROTATIONS = SokobanGame.ROTATIONS_ALL.copy()
 
     def __init__(self, game_timeout: int = SokobanGame.DEFAULT_TIMEOUT, put_map_in_the_center: bool = True,
                  info_game_count: int = 1000, enable_debug_printing: bool = False, use_bugged_dict_entries: bool = True,
@@ -431,6 +431,7 @@ class SokobanEnv(Env):
         if mode == 'human':
             self.sokoban_game.print_current_level()
             sleep(0.5)
+            os.system('cls')
         else:
             pass
 
@@ -506,7 +507,8 @@ class SokobanEnv(Env):
         return filename, summary_filename
 
     def save_game_to_file(self, print_save_message: bool = False):
-        file_name = self.sokoban_game.save_game_memory_to_file(filename=self.save_file_name)
+        save_file_name = self.save_file_name + "_" + str(self.games_counter)
+        file_name = self.sokoban_game.save_game_memory_to_file(filename=save_file_name)
         if print_save_message:
             print("Saving current game to file: " + file_name)
 

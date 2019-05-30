@@ -1,4 +1,5 @@
-import sys
+import os
+import time
 import argparse
 import datetime
 import threading
@@ -89,6 +90,11 @@ class SokobanGame:
     MAP_ROTATION_90 = 1
     MAP_ROTATION_180 = 2
     MAP_ROTATION_270 = 3
+    MAP_ROTATION_FLIP_Y = -1    # flip along y axis - flip left-right
+    MAP_ROTATION_FLIP_X = -2    # flip along x axis - flip up-down
+    ROTATIONS_STANDARD = [MAP_ROTATION_NONE, MAP_ROTATION_90, MAP_ROTATION_180, MAP_ROTATION_270]
+    ROTATIONS_FLIP = [MAP_ROTATION_FLIP_Y, MAP_ROTATION_FLIP_X]
+    ROTATIONS_ALL = ROTATIONS_STANDARD + ROTATIONS_FLIP
 
     PATH_TO_LEVELS = 'levels/'
     PATH_TO_MANUAL_GAMES = 'manual_games/'
@@ -118,7 +124,12 @@ class SokobanGame:
             raise Exception("Invalid map rotation option!")
         self.map_rotation = map_rotation
         # rotate map according to setting
-        self.current_level = np.rot90(self.current_level, k=map_rotation)
+        if map_rotation >= 0:   # standard rotation
+            self.current_level = np.rot90(self.current_level, k=map_rotation)
+        elif map_rotation == self.MAP_ROTATION_FLIP_Y:
+            self.current_level = np.fliplr(self.current_level)
+        elif map_rotation == self.MAP_ROTATION_FLIP_X:
+            self.current_level = np.flipud(self.current_level)
 
     @staticmethod
     def get_level(filepath: str):
@@ -540,8 +551,10 @@ class ManualPlaySokoban:
         print("Using key press events, no need to confirm symbols with Enter")
         print("Press any key to process it - ", allowed_moves_str, "for moves,", self.exit_string, "for exit",
               self.rules_string, "for rules")
+        time.sleep(1)
         with keyboard.Listener(on_press=self.on_key_press) as listener:     # comment this if you want key + enter instead of keyboard listener
             while continue_game:
+                os.system('cls')
                 game.print_current_level()
                 print("Are moves valid:")
                 print("up:", game.is_move_up_valid(), ", ", end='')

@@ -47,10 +47,10 @@ class SokobanManualGameMemoryLoader:
         # load moves into agents memory until specified limit is reached
         while not is_memory_full:
             for file in os.listdir(self.path_to_games):
-                print('Loading file ' + file)
+                print('Loading file ' + file + ', move counter = ' + str(move_counter) + '/' + str(self.memory_limit))
                 map_name, moves, _, _, map_rotation = SokobanGame.get_game_from_file(self.path_to_games + file)
 
-                if not map_rotation.isdigit():
+                if map_rotation not in SokobanGame.ROTATIONS_ALL:
                     print("Invalid map rotation! - not a number - skipping")
                     continue
                 map_rotation = int(map_rotation)
@@ -63,6 +63,13 @@ class SokobanManualGameMemoryLoader:
 
                     # process every move from file
                     move_list = moves.split(self.MOVE_SEPARATOR)
+
+                    # check if move can be translated to env representation
+                    for move in move_list:
+                        if move not in SokobanEnv.WASD_TO_ACTIONS and move not in SokobanEnv.LRUD_TO_ACTIONS:
+                            print("Invalid move: " + str(move) + " file: " + file + " - skipping file")
+                            continue
+
                     for move in move_list:
                         # check if memory is full - it would be a waste of time to continue loading when memory is already full
                         move_counter += 1
@@ -75,9 +82,6 @@ class SokobanManualGameMemoryLoader:
                             env_move = SokobanEnv.WASD_TO_ACTIONS[move]
                         elif move in SokobanEnv.LRUD_TO_ACTIONS:
                             env_move = SokobanEnv.LRUD_TO_ACTIONS[move]
-                        else:
-                            print("Invalid move: " + str(move) + " file: " + file + " - skipping")
-                            continue
 
                         # process step with env
                         env_state, reward_for_this_step, game_done, step_info_dict = sokoban_env_for_this_game.step(env_move)
@@ -105,7 +109,6 @@ class SokobanManualGameMemoryLoader:
 
                 except ValueError:
                     print("Invalid map specified in file " + file + ' - skipping')
-                    sys.exit(-1)
                     continue
 
                 if is_memory_full:
