@@ -47,6 +47,8 @@ NUMBER_OF_STEPS_FOR_WARMUP = 50000
 
 NUMBER_OF_EPISODES_FOR_TESTING = 500
 
+SAVE_EVERY_GAME = False
+
 
 def get_hidden_layer_activation(option):
     """ To allow keras advanced activations like LeakyReLU or PReLU """
@@ -84,7 +86,7 @@ def get_new_sokoban_env(for_test: bool, is_first_training: bool):
                                info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
                                use_bugged_dict_entries=False,
                                save_file_name='final_DQN_game_',
-                               save_every_game_to_file=False,
+                               save_every_game_to_file=SAVE_EVERY_GAME,
                                map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
                                use_more_than_one_channel=False,
                                scale_rewards=False,
@@ -99,7 +101,7 @@ def get_new_sokoban_env(for_test: bool, is_first_training: bool):
                                info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
                                use_bugged_dict_entries=False,
                                save_file_name='final_DQN_game_',
-                               save_every_game_to_file=False,
+                               save_every_game_to_file=SAVE_EVERY_GAME,
                                map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
                                use_more_than_one_channel=False,
                                scale_rewards=False,
@@ -136,6 +138,8 @@ if __name__ == "__main__":
                              dest="n_steps", default=NO_STEPS_SPECIFIED)
     args_parser.add_argument("-f", "--first_training", help="indicates that it is a first training for the network",
                              action="store_true", dest="is_first_traning")
+    args_parser.add_argument("-s", "--save_always", help="if set every game will be saved, default True if --test",
+                             action="store_true", dest="save_always")
     args = args_parser.parse_args()
     if args.test_weights != NO_TEST:
         weights_file_name = args.test_weights
@@ -151,6 +155,8 @@ if __name__ == "__main__":
         number_of_episodes = args.n_steps
     else:
         raise ValueError('Invalid n_steps number')
+    if args.save_always:
+        SAVE_EVERY_GAME = True
 
     start_time = time.time()
 
