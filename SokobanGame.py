@@ -120,7 +120,7 @@ class SokobanGame:
         self.total_reward = 0.0
         self.moves_made = []
         self.rewards_received = []
-        if map_rotation not in [self.MAP_ROTATION_NONE, self.MAP_ROTATION_90, self.MAP_ROTATION_180, self.MAP_ROTATION_270]:
+        if map_rotation not in self.ROTATIONS_ALL:
             raise Exception("Invalid map rotation option!")
         self.map_rotation = map_rotation
         # rotate map according to setting
