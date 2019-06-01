@@ -2,6 +2,7 @@ import datetime
 
 import Utils
 from map_generator import MapGeneratorConfig
+from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
 
 def save_game_map(game_map, image=None):
@@ -9,8 +10,8 @@ def save_game_map(game_map, image=None):
     parameters = [MapGeneratorConfig.MAP_WIDTH, MapGeneratorConfig.MAP_HEIGHT,
                   MapGeneratorConfig.NUM_OF_CHESTS,
                   MapGeneratorConfig.NUM_OF_MOVES,
-                  MapGeneratorConfig.PROB_OF_PULLING_STRAIGHT_FORWARD,
-                  MapGeneratorConfig.PROB_OF_CHANGING_SIDE]
+                  MapGeneratorPlayerActionEnum.PULL_CHEST.value,
+                  MapGeneratorPlayerActionEnum.CHANGE_SIDE.value]
     file_name = MapGeneratorConfig.PATH_TO_MAPS + str(parameters) + "_" + current_date + ".txt"
 
     game_map_string = Utils.get_string_game_map(game_map)

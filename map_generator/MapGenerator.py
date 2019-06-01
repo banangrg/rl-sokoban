@@ -1,20 +1,19 @@
 import asyncio
 import copy
+import itertools
 import threading
 from operator import add
 from random import randint
-import itertools
 
 import arcade
-import pyglet
 
 import Utils
 from ArcadeView import ArcadeView
 from BlockType import BlockType
 from map_generator import MapGeneratorConfig
+from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 from map_generator.MapSaver import save_game_map
 from map_generator.MovementArrayEnum import MovementArrayEnum
-from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
 action_type_list = [MapGeneratorPlayerActionEnum.PULL_CHEST, MapGeneratorPlayerActionEnum.CHANGE_SIDE]
 movement_direction_list = [MovementArrayEnum.DOWN, MovementArrayEnum.RIGHT, MovementArrayEnum.LEFT,
@@ -62,7 +61,7 @@ def move_field_leaving_empty(field, movement_array):
     if not is_point_inside_map(new_position):
         print("move_field_leaving_empty: New position outside map! ", new_position)
         return field
-    elif get_field_type(new_position) == BlockType.CHEST:
+    elif get_field_type(new_position) == BlockType.CHEST or get_field_type(new_position) == BlockType.CHEST_ON_GOAL:
         print("Next field is chest!")
         return field
     else:
@@ -89,11 +88,9 @@ def get_block_types_after_move(current_field_type, next_field_type):
     if current_field_type == BlockType.CHEST_ON_GOAL:
         second_field_type = BlockType.GOAL
         first_field_type = BlockType.CHEST
-        # return [BlockType.CHEST, BlockType.GOAL]
     elif current_field_type == BlockType.PLAYER_ON_GOAL:
         second_field_type = BlockType.GOAL
         first_field_type = BlockType.PLAYER
-        # return [BlockType.PLAYER, BlockType.GOAL]
 
     return [first_field_type, second_field_type]
 
@@ -201,11 +198,11 @@ def make_action():
 
 def drill_map(num_of_moves):
     actions = []
-    for i in range(1, num_of_moves):
+    for i in range(0, num_of_moves):
         actions.append(draw_action_type())
     Utils.print_enum_list("Actions", actions)
-    for i in range(1, num_of_moves):
-        make_action()
+    for i in range(0, num_of_moves):
+        run_action_type(actions[i])
         Utils.print_game_map(game_map)
 
 
