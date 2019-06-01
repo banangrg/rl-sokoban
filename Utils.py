@@ -91,6 +91,15 @@ def print_game_map(game_map):
         print("")
 
 
+def get_string_game_map(game_map):
+    string_game_map = ""
+    for row in game_map:
+        for column in row:
+            string_game_map += column.value
+        string_game_map += "\n"
+    return string_game_map
+
+
 def weighted_choice_b(weights):
     totals = []
     running_total = 0
@@ -102,6 +111,7 @@ def weighted_choice_b(weights):
     rnd = random.random() * running_total
     return bisect.bisect_right(totals, rnd)
 
+
 def weighted_choice_king(weights):
     total = 0
     winner = 0
@@ -110,3 +120,9 @@ def weighted_choice_king(weights):
         if random.random() * total < w:
             winner = i
     return winner
+
+
+def print_enum_list(name, list_to_print):
+    print(name, end=": ")
+    [print(x.name, end=", ") for x in list_to_print]
+    print()

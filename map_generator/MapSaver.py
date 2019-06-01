@@ -1,0 +1,17 @@
+import datetime
+
+import Utils
+from map_generator import MapGeneratorConfig
+
+
+def save_game_map(game_map):
+    current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    parameters = [MapGeneratorConfig.NUM_OF_MOVES, MapGeneratorConfig.PROB_OF_PULLING_STRAIGHT_FORWARD,
+                  MapGeneratorConfig.PROB_OF_CHANGING_SIDE]
+    file_name = MapGeneratorConfig.PATH_TO_MAPS + str(parameters) + "_" + current_date
+
+    game_map_string = Utils.get_string_game_map(game_map)
+
+    print("Saving map to: ", file_name)
+    with open(file_name, "w+") as f:
+        f.write(game_map_string)
