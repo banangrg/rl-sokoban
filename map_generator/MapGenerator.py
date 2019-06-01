@@ -1,6 +1,8 @@
 import asyncio
+import copy
 from operator import add
 from random import randint
+import itertools
 
 import arcade
 
@@ -21,9 +23,19 @@ player_position = []
 chest_near_player_num = -1
 
 
-def generate_map(x, y, num_chests=1):
+def set_testing_player_position(x, y):
+    global game_map, player_position
+    game_map[x][y] = BlockType.PLAYER
+    player_position = [x, y]
+    pass
+
+
+def generate_map(x, y, num_chests=10):
     init_map(x, y, num_chests)
-    make_path(MapGeneratorConfig.NUM_OF_MOVES)
+    # set_testing_player_position(5, 6)
+    # game_map[2][5] = BlockType.CHEST
+    move_player_to_point([2, 3])
+    # make_path(MapGeneratorConfig.NUM_OF_MOVES)
 
     show_view_and_print_game_map()
 
@@ -39,13 +51,16 @@ def draw_action_type():
 def move_field_leaving_empty(field, movement_array):
     field_type = game_map[field[0]][field[1]]
     new_position = get_field_after_move(field, movement_array)
-    if is_point_inside_map(new_position):
+    if not is_point_inside_map(new_position):
+        print("move_field_leaving_empty: New position outside map! ", new_position)
+        return field
+    elif get_field_type(new_position) == BlockType.CHEST:
+        print("Next field is chest!")
+        return field
+    else:
         game_map[new_position[0]][new_position[1]] = field_type
         game_map[field[0]][field[1]] = BlockType.EMPTY
         return new_position
-    else:
-        print("move_field_leaving_empty: New position outside map!")
-        return field
 
 
 def pull_chest():
@@ -74,8 +89,64 @@ def pick_point_on_side_of_the_chest_to_go_to():
     return possible_points[num]
 
 
-def move_player_to_point(point_to_go_to):
+def execute_player_path(moves_permutation):
+    global game_map, player_position
+    is_path_successful = True
+    game_map_backup = copy.deepcopy(game_map)
+    player_position_backup = copy.deepcopy(player_position)
 
+    for move in moves_permutation:
+        new_position = move_field_leaving_empty(player_position, move.value)
+        if new_position == player_position:
+            print("Move permutation unsuccessful")
+            is_path_successful = False
+            break
+        else:
+            player_position = new_position
+
+    if not is_path_successful:
+        game_map = copy.deepcopy(game_map_backup)
+        player_position = copy.deepcopy(player_position_backup)
+    else:
+        print("Sucessful permutation: ", moves_permutation)
+    return is_path_successful
+
+
+def move_player_to_point(point_to_go_to):
+    print("Player position: ", player_position, ";  point_to_go: ", point_to_go_to)
+    complete_movement_array = [a - b for a, b in zip(point_to_go_to, player_position)]
+    print("complete_movement_array: ", complete_movement_array)
+
+    x_direction = MovementArrayEnum.RIGHT
+    y_direction = MovementArrayEnum.UP
+    if complete_movement_array[0] < 0:
+        x_direction = MovementArrayEnum.LEFT
+    if complete_movement_array[1] < 0:
+        y_direction = MovementArrayEnum.DOWN
+    print("x_sign = ", x_direction, "; y_sign = ", y_direction)
+
+    moves_array = []
+    for i in range(0, abs(complete_movement_array[0])):
+        moves_array.append(x_direction)
+    for i in range(0, abs(complete_movement_array[1])):
+        moves_array.append(y_direction)
+    print("moves_array = ", moves_array)
+
+    moves_array_permutations = list(itertools.permutations(moves_array))
+    print("moves_array_permutations = ", moves_array_permutations)
+
+    # test_per = [MovementArrayEnum.LEFT, MovementArrayEnum.LEFT, MovementArrayEnum.DOWN, MovementArrayEnum.DOWN,
+    #             MovementArrayEnum.LEFT, MovementArrayEnum.DOWN]
+    # execute_player_path(test_per)
+
+    for moves_permutation in moves_array_permutations:
+        print("Executing move permutation:")
+        for move_enum in moves_permutation:
+            print(move_enum.name, end=",")
+        print()
+        is_path_successful = execute_player_path(moves_permutation)
+        if is_path_successful:
+            break
 
 
 def change_side():
@@ -84,8 +155,7 @@ def change_side():
     move_player_to_point(point_to_go_to)
 
 
-
-def action_type_to_function(action_type):
+def run_action_type(action_type):
     switcher = {
         MapGeneratorPlayerActionEnum.PULL_CHEST: pull_chest,
         MapGeneratorPlayerActionEnum.CHANGE_SIDE: change_side
@@ -97,7 +167,7 @@ def action_type_to_function(action_type):
 
 def make_action():
     action_type = draw_action_type()
-    action_type_to_function(action_type)
+    run_action_type(action_type)
 
     pass
 
@@ -187,3 +257,9 @@ def generate_all_wall_fields(x, y):
         for j in range(y):
             line.append(BlockType.WALL)
         game_map.append(line)
+
+def find_player():
+    for i in range(len(game_map)):
+        for j in range(len(game_map[i])):
+            if game_map[i][j] == BlockType.PLAYER or game_map[i][j] == BlockType.PLAYER_ON_GOAL:
+                return [i, j]
