@@ -10,7 +10,7 @@ class ArcadeView(arcade.Window):
 
     def __init__(self, game_map):
         Utils.set_width_and_height(game_map)
-        super().__init__(SobParams.WINDOW_WIDTH, SobParams.WINDOW_HEIGHT, SobParams.TITLE)
+        super().__init__(SobParams.WINDOW_HEIGHT, SobParams.WINDOW_WIDTH, SobParams.TITLE)
 
         self.listeners = []
         self.game_map = game_map
@@ -43,14 +43,14 @@ class ArcadeView(arcade.Window):
             listener.make_a_move(key)
 
     def draw_field_at(self, x, y, block_type):
-        arcade.draw_xywh_rectangle_filled(x * SobParams.FIELD_WIDTH, y * SobParams.FIELD_HEIGHT, SobParams.FIELD_WIDTH,
+        arcade.draw_xywh_rectangle_filled(y * SobParams.FIELD_WIDTH, x * SobParams.FIELD_HEIGHT, SobParams.FIELD_WIDTH,
                                           SobParams.FIELD_HEIGHT,
                                           block_type.get_color())
 
     def draw_map(self):
         for i in range(len(self.game_map)):
             for j in range(len(self.game_map[i])):
-                self.draw_field_at(i, j, BlockType(self.game_map[i][j]))
+                self.draw_field_at(len(self.game_map)-i-1, j, BlockType(self.game_map[i][j]))
 
     def draw_game_over(self, text):
         self.shouldDisplayMessage = True
