@@ -12,6 +12,8 @@ from map_generator.MovementArrayEnum import MovementArrayEnum
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
 action_type_list = [MapGeneratorPlayerActionEnum.PULL_CHEST, MapGeneratorPlayerActionEnum.CHANGE_SIDE]
+movement_direction_list = [MovementArrayEnum.DOWN, MovementArrayEnum.RIGHT, MovementArrayEnum.LEFT,
+                           MovementArrayEnum.UP]
 
 game_map = []
 chest_positions = []
@@ -59,8 +61,28 @@ def pull_chest():
         print("Can't pull, edge ahead!")
 
 
+def pick_point_on_side_of_the_chest_to_go_to():
+    possible_points = []
+    for movement_direction in movement_direction_list:
+        point = get_field_after_move(chest_positions[chest_near_player_num], movement_direction.value)
+        if is_point_inside_map(point):
+            point_type = get_field_type(point)
+            if point_type in [BlockType.WALL, BlockType.EMPTY, BlockType.GOAL]:
+                possible_points.append(point)
+    print("Possible points: ", possible_points)
+    num = randint(0, len(possible_points) - 1)
+    return possible_points[num]
+
+
+def move_player_to_point(point_to_go_to):
+
+
+
 def change_side():
     print('Change side')
+    point_to_go_to = pick_point_on_side_of_the_chest_to_go_to()
+    move_player_to_point(point_to_go_to)
+
 
 
 def action_type_to_function(action_type):
@@ -142,7 +164,7 @@ def get_field_after_move(position, movement_array):
 
 
 def get_field_type(position):
-    return game_map[position[0], position[1]]
+    return game_map[position[0]][position[1]]
 
 
 def show_view_and_print_game_map():
