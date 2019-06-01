@@ -3,7 +3,7 @@ import copy
 import itertools
 import threading
 from operator import add
-from random import randint
+from random import randint, shuffle
 
 import arcade
 
@@ -22,7 +22,7 @@ movement_direction_list = [MovementArrayEnum.DOWN, MovementArrayEnum.RIGHT, Move
 game_map = []
 chest_positions = []
 player_position = []
-chest_near_player_num = -1
+focus_chest = 0
 
 
 def set_testing_player_position(x, y):
@@ -98,20 +98,20 @@ def get_block_types_after_move(current_field_type, next_field_type):
 def pull_chest():
     print("Pull chest")
     global player_position
-    movement_array = [a - b for a, b in zip(player_position, chest_positions[chest_near_player_num])]
+    movement_array = [a - b for a, b in zip(player_position, chest_positions[focus_chest])]
 
     if is_point_inside_map(get_field_after_move(player_position, movement_array)):
         player_position = move_field_leaving_empty(player_position, movement_array)
-        chest_positions[chest_near_player_num] = move_field_leaving_empty(chest_positions[chest_near_player_num],
-                                                                          movement_array)
+        chest_positions[focus_chest] = move_field_leaving_empty(chest_positions[focus_chest],
+                                                                movement_array)
     else:
         print("Can't pull, edge ahead!")
 
 
-def pick_point_on_side_of_the_chest_to_go_to():
+def pick_point_on_side_of_the_chest_to_go_to(chest_num):
     possible_points = []
     for movement_direction in movement_direction_list:
-        point = get_field_after_move(chest_positions[chest_near_player_num], movement_direction.value)
+        point = get_field_after_move(chest_positions[chest_num], movement_direction.value)
         if is_point_inside_map(point):
             point_type = get_field_type(point)
             if point_type in [BlockType.WALL, BlockType.EMPTY, BlockType.GOAL]:
@@ -177,29 +177,34 @@ def move_player_to_point(point_to_go_to):
 
 def change_side():
     print('Change side')
-    point_to_go_to = pick_point_on_side_of_the_chest_to_go_to()
+    point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
+    move_player_to_point(point_to_go_to)
+
+
+def go_to_another_chest():
+    global focus_chest
+    focus_chest += 1
+    point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
     move_player_to_point(point_to_go_to)
 
 
 def run_action_type(action_type):
     switcher = {
         MapGeneratorPlayerActionEnum.PULL_CHEST: pull_chest,
-        MapGeneratorPlayerActionEnum.CHANGE_SIDE: change_side
-
+        MapGeneratorPlayerActionEnum.CHANGE_SIDE: change_side,
+        MapGeneratorPlayerActionEnum.GO_TO_ANOTHER_CHEST: go_to_another_chest
     }
     func = switcher.get(action_type, lambda: "Invalid action type")
     return func()
 
 
-def make_action():
-    action_type = draw_action_type()
-    run_action_type(action_type)
-
-
 def drill_map(num_of_moves):
     actions = []
+    for i in range(0, len(chest_positions) - 1):
+        actions.append(MapGeneratorPlayerActionEnum.GO_TO_ANOTHER_CHEST)
     for i in range(0, num_of_moves):
         actions.append(draw_action_type())
+    shuffle(actions)
     Utils.print_enum_list("Actions", actions)
     for i in range(0, num_of_moves):
         run_action_type(actions[i])
@@ -218,10 +223,10 @@ def generate_chests(num_chests, x, y):
 
 
 def generate_player():
-    global chest_near_player_num
+    global focus_chest
     global player_position
-    chest_near_player_num = randint(0, len(chest_positions) - 1)
-    start_chest_position = chest_positions[chest_near_player_num]
+    # chest_near_player_num = randint(0, len(chest_positions) - 1)
+    start_chest_position = chest_positions[focus_chest]
 
     possible_start_points = get_possible_start_points(start_chest_position)
     start_point_num = randint(0, len(possible_start_points) - 1)
