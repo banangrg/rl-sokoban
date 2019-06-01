@@ -1,3 +1,6 @@
+import asyncio
+import threading
+
 import arcade
 
 import SobParams as SobParams
@@ -50,7 +53,7 @@ class ArcadeView(arcade.Window):
     def draw_map(self):
         for i in range(len(self.game_map)):
             for j in range(len(self.game_map[i])):
-                self.draw_field_at(len(self.game_map)-i-1, j, BlockType(self.game_map[i][j]))
+                self.draw_field_at(len(self.game_map) - i - 1, j, BlockType(self.game_map[i][j]))
 
     def draw_game_over(self, text):
         self.shouldDisplayMessage = True
@@ -58,3 +61,6 @@ class ArcadeView(arcade.Window):
 
     def add_listener(self, listener):
         self.listeners.append(listener)
+
+
+

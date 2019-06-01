@@ -1,15 +1,18 @@
 import asyncio
 import copy
+import threading
 from operator import add
 from random import randint
 import itertools
 
 import arcade
+import pyglet
 
 import Utils
 from ArcadeView import ArcadeView
 from BlockType import BlockType
 from map_generator import MapGeneratorConfig
+from map_generator.MapSaver import save_game_map
 from map_generator.MovementArrayEnum import MovementArrayEnum
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
@@ -27,16 +30,21 @@ def set_testing_player_position(x, y):
     global game_map, player_position
     game_map[x][y] = BlockType.PLAYER
     player_position = [x, y]
-    pass
 
 
-def generate_map(x, y, num_chests=10):
-    init_map(x, y, num_chests)
-    # set_testing_player_position(5, 6)
-    # game_map[2][5] = BlockType.CHEST
-    move_player_to_point([2, 3])
-    # make_path(MapGeneratorConfig.NUM_OF_MOVES)
+def set_testing_chest(x, y):
+    game_map[x][y] = BlockType.CHEST
+    chest_positions.append([x, y])
 
+
+def generate_map():
+    init_map(MapGeneratorConfig.MAP_WIDTH, MapGeneratorConfig.MAP_HEIGHT, MapGeneratorConfig.NUM_OF_CHESTS)
+    # set_testing_player_position(2, 9)
+    # set_testing_chest(1, 9)
+    # move_player_to_point([1, 10])
+    drill_map(MapGeneratorConfig.NUM_OF_MOVES)
+
+    save_game_map(game_map)
     show_view_and_print_game_map()
 
 
@@ -58,9 +66,36 @@ def move_field_leaving_empty(field, movement_array):
         print("Next field is chest!")
         return field
     else:
-        game_map[new_position[0]][new_position[1]] = field_type
-        game_map[field[0]][field[1]] = BlockType.EMPTY
+        field_types_to_set = get_block_types_after_move(field_type, get_field_type(new_position))
+        game_map[new_position[0]][new_position[1]] = field_types_to_set[0]
+        game_map[field[0]][field[1]] = field_types_to_set[1]
         return new_position
+
+
+def get_block_types_after_move(current_field_type, next_field_type):
+    first_field_type = current_field_type
+    second_field_type = BlockType.EMPTY
+    if next_field_type == BlockType.GOAL:
+        if current_field_type == BlockType.PLAYER:
+            first_field_type = BlockType.PLAYER_ON_GOAL
+        elif current_field_type == BlockType.CHEST:
+            first_field_type = BlockType.CHEST_ON_GOAL
+        else:
+            print("get_block_types_after_move: Incorrect current_field_type - ", current_field_type)
+
+    if current_field_type == BlockType.CHEST_ON_GOAL or current_field_type == BlockType.PLAYER_ON_GOAL:
+        second_field_type = BlockType.GOAL
+
+    if current_field_type == BlockType.CHEST_ON_GOAL:
+        second_field_type = BlockType.GOAL
+        first_field_type = BlockType.CHEST
+        # return [BlockType.CHEST, BlockType.GOAL]
+    elif current_field_type == BlockType.PLAYER_ON_GOAL:
+        second_field_type = BlockType.GOAL
+        first_field_type = BlockType.PLAYER
+        # return [BlockType.PLAYER, BlockType.GOAL]
+
+    return [first_field_type, second_field_type]
 
 
 def pull_chest():
@@ -117,12 +152,12 @@ def move_player_to_point(point_to_go_to):
     complete_movement_array = [a - b for a, b in zip(point_to_go_to, player_position)]
     print("complete_movement_array: ", complete_movement_array)
 
-    x_direction = MovementArrayEnum.RIGHT
-    y_direction = MovementArrayEnum.UP
+    x_direction = MovementArrayEnum.DOWN
+    y_direction = MovementArrayEnum.RIGHT
     if complete_movement_array[0] < 0:
-        x_direction = MovementArrayEnum.LEFT
+        x_direction = MovementArrayEnum.UP
     if complete_movement_array[1] < 0:
-        y_direction = MovementArrayEnum.DOWN
+        y_direction = MovementArrayEnum.LEFT
     print("x_sign = ", x_direction, "; y_sign = ", y_direction)
 
     moves_array = []
@@ -131,19 +166,13 @@ def move_player_to_point(point_to_go_to):
     for i in range(0, abs(complete_movement_array[1])):
         moves_array.append(y_direction)
     print("moves_array = ", moves_array)
+    print("moves_array length= ", len(moves_array))
 
-    moves_array_permutations = list(itertools.permutations(moves_array))
-    print("moves_array_permutations = ", moves_array_permutations)
+    # moves_array_permutations = list(itertools.permutations(moves_array))
+    # print("moves_array_permutations = ", moves_array_permutations)
 
-    # test_per = [MovementArrayEnum.LEFT, MovementArrayEnum.LEFT, MovementArrayEnum.DOWN, MovementArrayEnum.DOWN,
-    #             MovementArrayEnum.LEFT, MovementArrayEnum.DOWN]
-    # execute_player_path(test_per)
-
-    for moves_permutation in moves_array_permutations:
-        print("Executing move permutation:")
-        for move_enum in moves_permutation:
-            print(move_enum.name, end=",")
-        print()
+    for moves_permutation in list(itertools.permutations(moves_array)):
+        Utils.print_enum_list("Executing move permutation:", moves_permutation)
         is_path_successful = execute_player_path(moves_permutation)
         if is_path_successful:
             break
@@ -169,14 +198,15 @@ def make_action():
     action_type = draw_action_type()
     run_action_type(action_type)
 
-    pass
 
-
-def make_path(num_of_moves):
+def drill_map(num_of_moves):
+    actions = []
+    for i in range(1, num_of_moves):
+        actions.append(draw_action_type())
+    Utils.print_enum_list("Actions", actions)
     for i in range(1, num_of_moves):
         make_action()
         Utils.print_game_map(game_map)
-    pass
 
 
 def generate_chests(num_chests, x, y):
@@ -185,7 +215,7 @@ def generate_chests(num_chests, x, y):
             chest_x = randint(1, x - 2)
             chest_y = randint(1, y - 2)
             if game_map[chest_x][chest_y] is BlockType.WALL:
-                game_map[chest_x][chest_y] = BlockType.CHEST
+                game_map[chest_x][chest_y] = BlockType.CHEST_ON_GOAL
                 chest_positions.append([chest_x, chest_y])
                 break
 
@@ -242,13 +272,30 @@ def show_view_and_print_game_map():
     ArcadeView(game_map)
     asyncio.run(arcade.run())
 
+    # arcade_thread = ArcadeThread(game_map)
+    # arcade_thread.start()
+    print("sochacki")
 
-def init_map(x, y, num_chests):
+
+class ArcadeThread(threading.Thread):
+    def __init__(self, game_map):
+        super(ArcadeThread, self).__init__()
+        self.game_map = game_map
+
+    def run(self):
+        ArcadeView(self.game_map)
+        arcade.run()
+
+
+def init_map(x, y, num_chests, test_mode=False):
     generate_all_wall_fields(x, y)
 
-    generate_chests(num_chests, x, y)
-    print(chest_positions)
-    generate_player()
+    if not test_mode:
+        generate_chests(num_chests, x, y)
+        print("Chest positions: ", chest_positions)
+        generate_player()
+        print("Player position: ", player_position)
+    Utils.print_game_map(game_map)
 
 
 def generate_all_wall_fields(x, y):
@@ -257,6 +304,7 @@ def generate_all_wall_fields(x, y):
         for j in range(y):
             line.append(BlockType.WALL)
         game_map.append(line)
+
 
 def find_player():
     for i in range(len(game_map)):

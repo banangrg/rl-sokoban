@@ -1,4 +1,5 @@
 import sys
+import itertools
 
 import Utils
 from RecordSaver import RecordSaver
@@ -19,4 +20,8 @@ if __name__ == "__main__":
     # Utils.set_width_and_height(game_map)
     # sobokanGameEngine = SobokanGameEngine(game_map,  input_moves)
 
-    generate_map(20, 12)
+    generate_map()
+
+    # Permutacje od 12 dzialaja bardzo wolno
+    # l = list(itertools.permutations(range(1, 12)))
+    # print(l)
