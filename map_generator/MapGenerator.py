@@ -99,8 +99,10 @@ def pull_chest():
     print("Pull chest")
     global player_position
     movement_array = [a - b for a, b in zip(player_position, chest_positions[focus_chest])]
+    field_after_move = get_field_after_move(player_position, movement_array)
 
-    if is_point_inside_map(get_field_after_move(player_position, movement_array)):
+    if is_point_inside_map(field_after_move) and get_field_type(field_after_move) != BlockType.CHEST and get_field_type(
+            field_after_move) != BlockType.CHEST_ON_GOAL:
         player_position = move_field_leaving_empty(player_position, movement_array)
         chest_positions[focus_chest] = move_field_leaving_empty(chest_positions[focus_chest],
                                                                 movement_array)
@@ -168,7 +170,7 @@ def move_player_to_point(point_to_go_to):
     # moves_array_permutations = list(itertools.permutations(moves_array))
     # print("moves_array_permutations = ", moves_array_permutations)
 
-    for moves_permutation in list(itertools.permutations(moves_array)):
+    for moves_permutation in set(list(itertools.permutations(moves_array))):
         Utils.print_enum_list("Executing move permutation:", moves_permutation)
         is_path_successful = execute_player_path(moves_permutation)
         if is_path_successful:
@@ -182,6 +184,7 @@ def change_side():
 
 
 def go_to_another_chest():
+    print("Go to another chest")
     global focus_chest
     focus_chest += 1
     point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
