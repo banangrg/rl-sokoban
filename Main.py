@@ -11,19 +11,22 @@ from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionE
 player_position = []
 game_map = Utils.generate_example_map()
 
+LEVEL = "VERY_SIMPLE_level"
+
 if __name__ == "__main__":
-    input_moves = Utils.get_moves_from_record_file("manual_games\\simple_level_3_2019-06-02_11-03-31.txt")
+    # input_moves = Utils.get_moves_from_record_file("manual_games\\simple_level_3_2019-06-02_11-03-31.txt")
+    input_moves = Utils.get_input_moves_list_starting_with("learned_games", LEVEL)
+    print(input_moves)
     # input_moves = Utils.get_example_moves()
     # input_moves = None
-    #
-    # level_path = Utils.get_level_path(sys.argv)
+
     RecordSaver.record_path = Utils.get_record_path(sys.argv)
-    game_map = Utils.read_map_from_file_path("levels\\simple_level_3.txt")
+    game_map = Utils.read_map_from_file_path("levels", LEVEL)
     Utils.set_width_and_height(game_map)
 
     arcade_view = ArcadeView(game_map)
 
-    sokobanGameEngine = SokobanGameEngine(game_map, arcade_view, [input_moves, input_moves])
+    sokobanGameEngine = SokobanGameEngine(game_map, arcade_view, input_moves)
 
     # generate_map()
 

@@ -64,3 +64,7 @@ class ArcadeView(arcade.Window):
     def restart(self):
         self.shouldDisplayMessage = False
         self.message = "Default Message"
+
+    def draw_text(self, text):
+        self.shouldDisplayMessage = True
+        self.message = text

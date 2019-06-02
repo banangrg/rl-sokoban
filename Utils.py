@@ -59,8 +59,9 @@ def get_record_path(argv):
     return record_path + level_name
 
 
-def read_map_from_file_path(file_path):
+def read_map_from_file_path(folder_name, file_name):
     # SobParams.DEFAULT_LEVEL = file_path.split("\\")[1]
+    file_path = folder_name + "\\" + file_name + ".txt"
     lines = []
     with open(file_path) as map_file:
         for line in map_file:
@@ -83,6 +84,17 @@ def get_moves_from_record_file(file_name):
     content = file.read()
     lines = content.split("\n")
     return lines[1]
+
+
+def get_input_moves_list_starting_with(folder_name, starting_string):
+    import os
+    files = [i for i in os.listdir(folder_name) if
+             os.path.isfile(os.path.join(folder_name, i)) and starting_string in i]
+    # [print(f) for f in files]
+
+    inputs_list = []
+    [inputs_list.append(get_moves_from_record_file(folder_name + "\\" + file_name)) for file_name in files]
+    return inputs_list
 
 
 def print_game_map(game_map):

@@ -27,7 +27,8 @@ class AutoPlay(threading.Thread):
         for move in self.input_moves:
             print("Making a move")
             self.sokoban_game_engine.make_a_move(move)
-            time.sleep(SobParams.TIME_OFFSET)
+            time.sleep(SobParams.MOVE_TIME_OFFSET)
+        self.sokoban_game_engine.draw_game_over()
         self.sokoban_game_engine.restart_with_next_inputs()
 
 
@@ -42,10 +43,11 @@ class SokobanGameEngine(ArcadeViewListener):
 
         self.original_map = game_map
         self.input_moves_list = input_moves_list
-        self.input_moves_iterator = 0
+        self.input_moves_iterator = -1
 
-        self.init_variables()
-        self.start_autoplay(input_moves_list[0])
+        # self.init_variables()
+        # self.start_autoplay(input_moves_list[0])
+        self.restart_with_next_inputs()
 
         asyncio.run(arcade.run())
 
@@ -56,6 +58,7 @@ class SokobanGameEngine(ArcadeViewListener):
 
     def restart_with_next_inputs(self):
         self.input_moves_iterator += 1
+        print("Staring input moves nr: ", self.input_moves_iterator)
         if self.input_moves_iterator >= len(self.input_moves_list):
             print("End of input moves")
         else:
@@ -90,12 +93,16 @@ class SokobanGameEngine(ArcadeViewListener):
             key = key.value
         if key == MoveEnum.LEFT.value:
             movement_array = MovementArrayEnum.LEFT.value
+            self.arcadeView.draw_text("LEFT")
         elif key == MoveEnum.RIGHT.value:
             movement_array = MovementArrayEnum.RIGHT.value
+            self.arcadeView.draw_text("RIGHT")
         elif key == MoveEnum.UP.value:
             movement_array = MovementArrayEnum.UP.value
+            self.arcadeView.draw_text("UP")
         elif key == MoveEnum.DOWN.value:
             movement_array = MovementArrayEnum.DOWN.value
+            self.arcadeView.draw_text("DOWN")
         self.moves.append(key)
 
         if self.get_player_next_field_type(movement_array) == BlockType.WALL:
@@ -197,13 +204,17 @@ class SokobanGameEngine(ArcadeViewListener):
             self.game_map[chest_field[0]][chest_field[1]] = BlockType.CHEST
 
     def draw_game_over(self):
-        if len(self.rewards) > SobParams.MOVE_TIMEOUT:
+        # if len(self.rewards) > SobParams.MOVE_TIMEOUT:
+        #     output = "Failure"
+        # else:
+        #     output = "Success"
+        if self.goals_left != 0:
             output = "Failure"
         else:
             output = "Success"
         self.arcadeView.draw_game_over(output)
         # arcade.draw_text(output, 0, 0, arcade.color.PINK, 24)
-        time.sleep(2)
+        time.sleep(SobParams.FINISH_GAME_STOP_TIME)
         # self.arcadeView.close()
         # arcade.close_window()
         # raise Exception('End this game')
