@@ -1,6 +1,9 @@
 import sys
 import random
 import bisect
+import os
+from numpy import array
+import numpy
 
 import SobParams as SobParams
 from BlockType import BlockType
@@ -71,30 +74,41 @@ def read_map_from_file_path(folder_name, file_name):
 
 
 def set_width_and_height(game_map):
-    SobParams.WINDOW_WIDTH = len(game_map) * SobParams.FIELD_WIDTH
-    SobParams.WINDOW_HEIGHT = len(game_map[0]) * SobParams.FIELD_HEIGHT
+    # SobParams.WINDOW_WIDTH = len(game_map) * SobParams.FIELD_WIDTH
+    # SobParams.WINDOW_HEIGHT = len(game_map[0]) * SobParams.FIELD_HEIGHT
+    width = len(game_map) * SobParams.FIELD_WIDTH
+    height = len(game_map[0]) * SobParams.FIELD_HEIGHT
+    size_to_set = width
+    if height > width:
+        size_to_set = height
+    SobParams.WINDOW_WIDTH = size_to_set
+    SobParams.WINDOW_HEIGHT = size_to_set
 
 
 def get_example_moves():
     return "L;U;R;D;" * 10
 
 
-def get_moves_from_record_file(file_name):
+def read_line_of_file(file_name, line_num):
     file = open(file_name, "r")
     content = file.read()
     lines = content.split("\n")
-    return lines[1]
+    return lines[line_num]
 
 
-def get_input_moves_list_starting_with(folder_name, starting_string):
-    import os
+def get_input_moves_list_starting_with(folder_name, level_name):
+    inputs_list = []
+    rotations = []
     files = [i for i in os.listdir(folder_name) if
-             os.path.isfile(os.path.join(folder_name, i)) and starting_string in i]
+             os.path.isfile(os.path.join(folder_name, i)) and level_name in i]
+    precise_files = []
+    [precise_files.append(file) for file in files if file.split("__")[0] == level_name]
+    files = precise_files
     # [print(f) for f in files]
 
-    inputs_list = []
-    [inputs_list.append(get_moves_from_record_file(folder_name + "\\" + file_name)) for file_name in files]
-    return inputs_list
+    [inputs_list.append(read_line_of_file(folder_name + "\\" + file_name, 1)) for file_name in files]
+    [rotations.append(int(read_line_of_file(folder_name + "\\" + file_name, 4))) for file_name in files]
+    return inputs_list, rotations
 
 
 def print_game_map(game_map):
@@ -139,3 +153,16 @@ def print_enum_list(name, list_to_print):
     print(name, end=": ")
     [print(x.name, end=", ") for x in list_to_print]
     print()
+
+
+def rotate_map(game_map, rotation):
+    game_map = array(game_map)
+    if rotation >= 0:
+        game_map = numpy.rot90(game_map, rotation)
+    elif rotation == -1:
+        game_map = numpy.fliplr(game_map)
+    elif rotation == -2:
+        game_map = numpy.flipud(game_map)
+    else:
+        raise Exception("Wrong rotation: ", rotation)
+    return game_map.tolist()

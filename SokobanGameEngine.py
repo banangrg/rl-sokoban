@@ -7,6 +7,7 @@ from operator import add
 import arcade
 
 import SobParams as SobParams
+import Utils
 from ArcadeView import ArcadeView
 from ArcadeViewListener import ArcadeViewListener
 from BlockType import BlockType
@@ -34,7 +35,7 @@ class AutoPlay(threading.Thread):
 
 class SokobanGameEngine(ArcadeViewListener):
 
-    def __init__(self, game_map, arcade_view, input_moves_list=None):
+    def __init__(self, game_map, arcade_view, input_moves_list=None, rotations=None):
         super().__init__()
 
         self.arcadeView = arcade_view
@@ -44,6 +45,7 @@ class SokobanGameEngine(ArcadeViewListener):
         self.original_map = game_map
         self.input_moves_list = input_moves_list
         self.input_moves_iterator = -1
+        self.rotations = rotations
 
         # self.init_variables()
         # self.start_autoplay(input_moves_list[0])
@@ -58,16 +60,17 @@ class SokobanGameEngine(ArcadeViewListener):
 
     def restart_with_next_inputs(self):
         self.input_moves_iterator += 1
-        print("Staring input moves nr: ", self.input_moves_iterator)
         if self.input_moves_iterator >= len(self.input_moves_list):
             print("End of input moves")
         else:
+            print("Staring input moves nr: ", self.input_moves_iterator)
             self.init_variables()
             self.start_autoplay(self.input_moves_list[self.input_moves_iterator])
 
     def init_variables(self):
-        self.game_map = copy.deepcopy(self.original_map)
+        self.game_map = Utils.rotate_map(copy.deepcopy(self.original_map), self.rotations[self.input_moves_iterator])
         self.arcadeView.game_map = self.game_map
+        # self.arcadeView.resize_window()
         self.arcadeView.restart()
         self.player_position = self.find_block_of_type(BlockType.PLAYER)
         self.goals_left = self.calculate_num_of_block_of_type(BlockType.GOAL)
@@ -147,8 +150,8 @@ class SokobanGameEngine(ArcadeViewListener):
 
         self.check_if_game_over_and_handle_it()
 
-    def draw_map(self):
-        self.arcadeView.draw_map(self.game_map)
+    # def draw_map(self):
+    #     self.arcadeView.draw_map(self.game_map)
         # for i in range(len(self.game_map)):
         #     for j in range(len(self.game_map[i])):
         #         ArcadeView.draw_field_at(i, j, BlockType(self.game_map[i][j]))
