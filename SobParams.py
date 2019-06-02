@@ -1,6 +1,6 @@
 import arcade
 
-TITLE = "SOBOKAN"
+TITLE = "SOKOBAN"
 PATH_TO_LEVELS = 'levels/'
 PATH_TO_MANUAL_GAMES = 'manual_games/'
 DEFAULT_LEVEL = "simple_level_3.txt"

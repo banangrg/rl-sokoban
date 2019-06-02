@@ -4,7 +4,7 @@ import itertools
 import Utils
 from ArcadeView import ArcadeView
 from RecordSaver import RecordSaver
-from SobokanGameEngine import SobokanGameEngine
+from SokobanGameEngine import SokobanGameEngine
 from map_generator.MapGenerator import generate_map
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
@@ -23,13 +23,7 @@ if __name__ == "__main__":
 
     arcade_view = ArcadeView(game_map)
 
-    # try:
-    #     sobokanGameEngine = SobokanGameEngine(game_map, arcade_view, input_moves)
-    # except:
-    #     pass
-
-    sobokanGameEngine = SobokanGameEngine(game_map, arcade_view, [input_moves, input_moves])
-    # sobokanGameEngine = SobokanGameEngine(game_map)
+    sokobanGameEngine = SokobanGameEngine(game_map, arcade_view, [input_moves, input_moves])
 
     # generate_map()
 

@@ -17,21 +17,21 @@ from map_generator.MovementArrayEnum import MovementArrayEnum
 
 
 class AutoPlay(threading.Thread):
-    def __init__(self, sobokan_game_engine, input_moves):
+    def __init__(self, sokoban_game_engine, input_moves):
         super(AutoPlay, self).__init__()
-        self.sobokan_game_engine = sobokan_game_engine
+        self.sokoban_game_engine = sokoban_game_engine
         self.input_moves = input_moves
 
     def run(self):
         self.input_moves = self.input_moves.split(SobParams.INPUT_MOVES_DELIMITER)
         for move in self.input_moves:
             print("Making a move")
-            self.sobokan_game_engine.make_a_move(move)
+            self.sokoban_game_engine.make_a_move(move)
             time.sleep(SobParams.TIME_OFFSET)
-        self.sobokan_game_engine.restart_with_next_inputs()
+        self.sokoban_game_engine.restart_with_next_inputs()
 
 
-class SobokanGameEngine(ArcadeViewListener):
+class SokobanGameEngine(ArcadeViewListener):
 
     def __init__(self, game_map, arcade_view, input_moves_list=None):
         super().__init__()
