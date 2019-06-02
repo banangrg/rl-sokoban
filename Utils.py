@@ -104,6 +104,7 @@ def get_input_moves_list_starting_with(folder_name, level_name):
     precise_files = []
     [precise_files.append(file) for file in files if file.split("__")[0] == level_name]
     files = precise_files
+    files.sort(key=lambda x: x.split("episodes_")[1])
     # [print(f) for f in files]
 
     [inputs_list.append(read_line_of_file(folder_name + "\\" + file_name, 1)) for file_name in files]
