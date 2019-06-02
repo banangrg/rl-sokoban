@@ -3,11 +3,11 @@ import arcade
 TITLE = "SOBOKAN"
 PATH_TO_LEVELS = 'levels/'
 PATH_TO_MANUAL_GAMES = 'manual_games/'
-DEFAULT_LEVEL = "simple_level_2.txt"
+DEFAULT_LEVEL = "simple_level_3.txt"
 
 MOVE_TIMEOUT = 200
 
-TIME_OFFSET = 1
+TIME_OFFSET = 0.3
 INPUT_MOVES_DELIMITER = ";"
 
 FIELD_WIDTH = 30

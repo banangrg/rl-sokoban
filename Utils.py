@@ -60,6 +60,7 @@ def get_record_path(argv):
 
 
 def read_map_from_file_path(file_path):
+    # SobParams.DEFAULT_LEVEL = file_path.split("\\")[1]
     lines = []
     with open(file_path) as map_file:
         for line in map_file:
@@ -78,7 +79,7 @@ def get_example_moves():
 
 
 def get_moves_from_record_file(file_name):
-    file = open("manual_games\\" + file_name, "r")
+    file = open(file_name, "r")
     content = file.read()
     lines = content.split("\n")
     return lines[1]

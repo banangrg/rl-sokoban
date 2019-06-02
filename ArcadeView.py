@@ -15,10 +15,9 @@ class ArcadeView(arcade.Window):
         Utils.set_width_and_height(game_map)
         super().__init__(SobParams.WINDOW_HEIGHT, SobParams.WINDOW_WIDTH, SobParams.TITLE)
 
-        self.listeners = []
         self.game_map = game_map
-        self.shouldDisplayMessage = False
-        self.message = "Default Message"
+        self.listeners = []
+        self.restart()
 
         arcade.start_render()
         arcade.set_background_color(SobParams.BACKGROUND_COLOR)
@@ -62,5 +61,6 @@ class ArcadeView(arcade.Window):
     def add_listener(self, listener):
         self.listeners.append(listener)
 
-
-
+    def restart(self):
+        self.shouldDisplayMessage = False
+        self.message = "Default Message"

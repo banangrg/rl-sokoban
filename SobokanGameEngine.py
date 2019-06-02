@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import threading
 import time
 from operator import add
@@ -12,32 +13,59 @@ from BlockType import BlockType
 from MoveEnum import MoveEnum
 from RecordSaver import RecordSaver
 from RewardDict import RewardDict
+from map_generator.MovementArrayEnum import MovementArrayEnum
 
 
 class AutoPlay(threading.Thread):
-    def __init__(self, sobokan_game_engine):
+    def __init__(self, sobokan_game_engine, input_moves):
         super(AutoPlay, self).__init__()
         self.sobokan_game_engine = sobokan_game_engine
+        self.input_moves = input_moves
 
     def run(self):
-        moves = self.sobokan_game_engine.input_moves.split(SobParams.INPUT_MOVES_DELIMITER)
-        for move in moves:
+        self.input_moves = self.input_moves.split(SobParams.INPUT_MOVES_DELIMITER)
+        for move in self.input_moves:
             print("Making a move")
             self.sobokan_game_engine.make_a_move(move)
             time.sleep(SobParams.TIME_OFFSET)
+        self.sobokan_game_engine.restart_with_next_inputs()
 
 
 class SobokanGameEngine(ArcadeViewListener):
 
-    def __init__(self, game_map, input_moves=None):
+    def __init__(self, game_map, arcade_view, input_moves_list=None):
         super().__init__()
 
-        self.arcadeView = ArcadeView(game_map)
+        self.arcadeView = arcade_view
+        self.arcadeView.restart()
         self.arcadeView.add_listener(self)
 
-        self.game_map = game_map
-        self.input_moves = input_moves
+        self.original_map = game_map
+        self.input_moves_list = input_moves_list
+        self.input_moves_iterator = 0
 
+        self.init_variables()
+        self.start_autoplay(input_moves_list[0])
+
+        asyncio.run(arcade.run())
+
+    def start_autoplay(self, input_moves):
+        if input_moves is not None:
+            self.autoplay_thread = AutoPlay(self, input_moves)
+            self.autoplay_thread.start()
+
+    def restart_with_next_inputs(self):
+        self.input_moves_iterator += 1
+        if self.input_moves_iterator >= len(self.input_moves_list):
+            print("End of input moves")
+        else:
+            self.init_variables()
+            self.start_autoplay(self.input_moves_list[self.input_moves_iterator])
+
+    def init_variables(self):
+        self.game_map = copy.deepcopy(self.original_map)
+        self.arcadeView.game_map = self.game_map
+        self.arcadeView.restart()
         self.player_position = self.find_block_of_type(BlockType.PLAYER)
         self.goals_left = self.calculate_num_of_block_of_type(BlockType.GOAL)
         self.is_player_on_goal = False
@@ -45,12 +73,6 @@ class SobokanGameEngine(ArcadeViewListener):
         self.moves = []
         self.record_saved = False
         self.rewards = []
-
-        if input_moves is not None:
-            self.autoplay_thread = AutoPlay(self)
-            self.autoplay_thread.start()
-
-        asyncio.run(arcade.run())
 
     def check_if_game_over_and_handle_it(self):
         if self.game_over:
@@ -67,13 +89,13 @@ class SobokanGameEngine(ArcadeViewListener):
         if isinstance(key, MoveEnum):
             key = key.value
         if key == MoveEnum.LEFT.value:
-            movement_array = [-1, 0]
+            movement_array = MovementArrayEnum.LEFT.value
         elif key == MoveEnum.RIGHT.value:
-            movement_array = [1, 0]
+            movement_array = MovementArrayEnum.RIGHT.value
         elif key == MoveEnum.UP.value:
-            movement_array = [0, 1]
+            movement_array = MovementArrayEnum.UP.value
         elif key == MoveEnum.DOWN.value:
-            movement_array = [0, -1]
+            movement_array = MovementArrayEnum.DOWN.value
         self.moves.append(key)
 
         if self.get_player_next_field_type(movement_array) == BlockType.WALL:
@@ -180,4 +202,8 @@ class SobokanGameEngine(ArcadeViewListener):
         else:
             output = "Success"
         self.arcadeView.draw_game_over(output)
-        arcade.draw_text(output, 0, 0, arcade.color.PINK, 24)
+        # arcade.draw_text(output, 0, 0, arcade.color.PINK, 24)
+        time.sleep(2)
+        # self.arcadeView.close()
+        # arcade.close_window()
+        # raise Exception('End this game')
