@@ -49,7 +49,7 @@ class SokobanGameEngine(ArcadeViewListener):
 
         # self.init_variables()
         # self.start_autoplay(input_moves_list[0])
-        self.restart_with_next_inputs()
+        # self.restart_with_next_inputs()
 
         asyncio.run(arcade.run())
 

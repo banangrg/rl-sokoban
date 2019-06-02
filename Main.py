@@ -11,7 +11,7 @@ from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionE
 player_position = []
 game_map = Utils.generate_example_map()
 
-LEVEL = "VERY_SIMPLE_level_1"
+LEVEL = "MEDIUM_map_8"
 
 if __name__ == "__main__":
     # input_moves = Utils.get_moves_from_record_file("manual_games\\simple_level_3_2019-06-02_11-03-31.txt")

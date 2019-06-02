@@ -47,6 +47,10 @@ class ArcadeView(arcade.Window):
         elif key == arcade.key.DOWN:
             print("down")
             key = MoveEnum.DOWN
+        elif key == arcade.key.SPACE:
+            print("Starting")
+            for listener in self.listeners:
+                listener.restart_with_next_inputs()
 
         for listener in self.listeners:
             listener.make_a_move(key)
