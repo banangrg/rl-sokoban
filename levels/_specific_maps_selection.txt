@@ -1,2 +1,5 @@
-VERY_SIMPLE_map_14.txt
-SIMPLE_non_rectangle_level.txt
+TEST_MEDIUM_map_2.txt
+TEST_SIMPLE_map_1.txt
+TEST_SIMPLE_map_2.txt
+TEST_SIMPLE_map_3.txt
+TEST_VERY_SIMPLE_map_1.txt

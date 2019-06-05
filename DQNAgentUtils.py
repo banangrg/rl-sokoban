@@ -53,8 +53,9 @@ def load_agent_weights(agent_obj, weights_file_path):
         agent_obj.load_weights(weights_file_path)
         return agent_obj
     else:
-        print("ERROR! Weights file not found at given location: " + weights_file_path)
-        return None
+        msg = "ERROR! Weights file not found at given location: " + weights_file_path
+        print(msg)
+        raise ValueError(msg)
 
 
 def show_reward_plot(training_history, plot_title: str, plot_nb_episode_steps: bool = False):

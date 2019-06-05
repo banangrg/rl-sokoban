@@ -6,7 +6,7 @@ from keras.models import Sequential
 from keras.layers import Flatten, Conv2D, Dense, Activation, MaxoutDense, LeakyReLU, PReLU
 from keras.optimizers import Adam
 from rl.agents.dqn import DQNAgent
-from rl.policy import BoltzmannQPolicy
+from rl.policy import BoltzmannQPolicy, EpsGreedyQPolicy
 from rl.memory import SequentialMemory
 from rl.callbacks import TrainEpisodeLogger, ModelIntervalCheckpoint
 from SokobanEnv import SokobanEnv
@@ -78,9 +78,29 @@ def make_custom_model(input_rows, input_cols):
     return custom_model
 
 
+def make_custom_model_2(input_rows, input_cols):
+    global HIDDEN_ACTIVATION
+    #HIDDEN_ACTIVATION = 'relu'
+    custom_model = Sequential()
+    custom_model.add(Conv2D(int(CONV_LAYER_SIZE_BASE / 2), kernel_size=(7, 7), strides=2,
+                            input_shape=(WINDOW_LENGTH, input_rows, input_cols), data_format='channels_first'))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(5, 5), data_format='channels_first'))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(Conv2D(CONV_LAYER_SIZE_BASE, kernel_size=(3, 3), data_format='channels_first'))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(Flatten())
+    custom_model.add(Dense(512))
+    custom_model.add(get_hidden_layer_activation(HIDDEN_ACTIVATION))
+    custom_model.add(MaxoutDense(NUMBER_OF_POSSIBLE_ACTIONS, nb_feature=4))
+    custom_model.add(Activation('linear'))
+    return custom_model
+
+
 def get_new_sokoban_env(for_test: bool, is_first_training: bool):
     SokobanEnv.configure_env_size(new_rows=ENV_SIZE_ROWS, new_cols=ENV_SIZE_COLS)
     if not for_test and is_first_training:
+        SokobanEnv.configure_difficulty_games_count_requirement(100, 1000, 2500, 5000)  # to get more maps quicker
         agent_env = SokobanEnv(game_timeout=SokobanGame.DEFAULT_TIMEOUT,
                                put_map_in_the_center=True,
                                info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
@@ -156,6 +176,7 @@ if __name__ == "__main__":
     else:
         raise ValueError('Invalid n_steps number')
     if args.save_always:
+        print("[INFO] Saving EVERY games played by the agent")
         SAVE_EVERY_GAME = True
 
     start_time = time.time()
@@ -171,8 +192,9 @@ if __name__ == "__main__":
     print("[INFO] Building DQNAgent...")
     basic_memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGTH)
     action_choice_policy = BoltzmannQPolicy(tau=1., clip=(-500., 500.))
+    #action_choice_policy = EpsGreedyQPolicy(eps=0.1)
     dqn = DQNAgent(model=model, nb_actions=NUMBER_OF_POSSIBLE_ACTIONS, policy=action_choice_policy, memory=basic_memory,
-                   processor=bugfix_processor, batch_size=MEMORY_REPLAY_BATCH_SIZE,
+                   processor=bugfix_processor, batch_size=MEMORY_REPLAY_BATCH_SIZE, test_policy=action_choice_policy,
                    enable_double_dqn=True, enable_dueling_network=True, nb_steps_warmup=NUMBER_OF_STEPS_FOR_WARMUP,
                    gamma=GAMMA, target_model_update=10000, train_interval=4, delta_clip=1.)
     opt = Adam(lr=.00025)

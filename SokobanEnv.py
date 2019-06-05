@@ -180,6 +180,7 @@ class SokobanEnv(Env):
         # check if specified maps exist
         not_found_maps = []
         for lvl in specified_maps:
+            lvl = lvl.rstrip()
             map_found = False
             for file in os.listdir(SokobanGame.PATH_TO_LEVELS):
                 if file.upper() == lvl.upper():
@@ -189,7 +190,7 @@ class SokobanEnv(Env):
                 print("[WARNING] Map " + lvl + " not found in level directory " + SokobanGame.PATH_TO_LEVELS)
                 not_found_maps.append(lvl)
         # remove not existing maps
-        specified_maps = [el for el in specified_maps if el not in not_found_maps]
+        specified_maps = [el.rstrip() for el in specified_maps if el not in not_found_maps]
         if len(specified_maps) == 0:
             comm = "No existing maps found in file " + SokobanEnv.SPECIFIC_MAPS_FILE_NAME
             print("[ERROR] " + comm)
@@ -369,7 +370,7 @@ class SokobanEnv(Env):
         # simple logging of victory stats before we reset the env
         self.games_counter += 1
         game_was_saved_to_file = self.print_games_won_info_if_needed()
-        if (not game_was_saved_to_file) and self.save_every_game_to_file:   # if we want to save every game played by agent to separate file
+        if (not game_was_saved_to_file) and self.save_every_game_to_file and (self.sokoban_game is not None):   # if we want to save every game played by agent to separate file
             self.save_game_to_file(print_save_message=False)
 
         # get available maps - according to map selection option defined when creating the env object
@@ -507,7 +508,7 @@ class SokobanEnv(Env):
         return filename, summary_filename
 
     def save_game_to_file(self, print_save_message: bool = False):
-        save_file_name = self.save_file_name + "_" + str(self.games_counter)
+        save_file_name = self.save_file_name + "_" + str(self.games_counter) + "_episodes_"
         file_name = self.sokoban_game.save_game_memory_to_file(filename=save_file_name)
         if print_save_message:
             print("Saving current game to file: " + file_name)
