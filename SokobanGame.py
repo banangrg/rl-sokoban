@@ -400,7 +400,7 @@ class SokobanGame:
         line 5: map rotation option - 0 = none, 1 - 90, 2 - 180, 3 - 270
         """
         map_name = self.path_to_current_level.split('/')[1].split('.')[0]     # map file name without extension assuming path_to_current_level is with directory and file extension
-        current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.%f')
         filename = self.PATH_TO_MANUAL_GAMES + map_name + "_" + filename + current_date + "." + file_extension
 
         moves_str = ""
@@ -540,7 +540,7 @@ class ManualPlaySokoban:
                            map_rotation=map_rotation)
         continue_game = True
         SokobanGame.print_rules()
-        print("Use 'exit' to end the game, 'rules' to print game rules")
+        print("Use 'e' to end the game, 'r' to print game rules")
         allowed_moves = [SokobanGame.MOVE_LEFT.upper(), SokobanGame.MOVE_RIGHT.upper(), SokobanGame.MOVE_UP.upper(), SokobanGame.MOVE_DOWN.upper()]
         allowed_moves_str = "("
         for m in allowed_moves:
@@ -603,8 +603,8 @@ if __name__ == "__main__":
                              help="path to map, eg 'non_rectangle_level.txt', levels directory is already specified internally",
                              dest="map", default="SIMPLE_non_rectangle_level.txt")
     args_parser.add_argument("-r", "--rotation", type=int,
-                             help="rotation of map: 0 - none, 1- 90 degrees, 2 - 180 degrees, 3 - 270 degrees",
-                             choices=[0, 1, 2, 3], dest="rotation", default=0)
+                             help="rotation of map: 0 - none, 1- 90 degrees, 2 - 180 degrees, 3 - 270 degrees, -1 fliplr, -2 flipud",
+                             choices=SokobanGame.ROTATIONS_ALL, dest="rotation", default=0)
     args_parser.add_argument("-w", "--wasd", help="change controls to WASD instead of using default LRUD", action="store_true",
                              dest="use_wasd")
     args = args_parser.parse_args()
