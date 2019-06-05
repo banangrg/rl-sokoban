@@ -14,6 +14,7 @@ from pynput import keyboard
 # * - box on target
 # @ - player
 # + - player on target
+from map_generator.MapGenerator import generate_map
 
 
 class AbstractRewardSystem:
@@ -616,3 +617,5 @@ if __name__ == "__main__":
 
     manual_sokoban = ManualPlaySokoban()
     manual_sokoban.sokoban_manual_play(level_path, use_wsad=do_use_wasd, map_rotation=chosen_rotation)
+
+    # generate_map()

@@ -1,0 +1,6 @@
+MAP_WIDTH = 10
+MAP_HEIGHT = 10
+NUM_OF_CHESTS = 2
+NUM_OF_MOVES = 20
+
+PATH_TO_MAPS = 'generated_maps/'
