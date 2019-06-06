@@ -4,3 +4,5 @@ NUM_OF_CHESTS = 2
 NUM_OF_MOVES = 20
 
 PATH_TO_MAPS = 'generated_maps/'
+
+MAX_PERMUTATION_LENGTH = 10

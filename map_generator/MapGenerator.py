@@ -176,7 +176,7 @@ def move_player_to_point(point_to_go_to):
         moves_array.append(y_direction)
     # print("moves_array = ", moves_array)
     # print("moves_array length= ", len(moves_array))
-    if len(moves_array) > 10:
+    if len(moves_array) > MapGeneratorConfig.MAX_PERMUTATION_LENGTH:
         # print("Raise exceptions!")
         raise Exception("moves_array too long: " + len(moves_array))
 
