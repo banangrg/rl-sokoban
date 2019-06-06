@@ -298,7 +298,16 @@ def get_field_type(position):
 #         arcade.run()
 
 
+def reset_map_generator_variables():
+    global game_map, chest_positions, player_position, focus_chest
+    game_map = []
+    chest_positions = []
+    player_position = []
+    focus_chest = 0
+
+
 def init_map(x, y, num_chests, test_mode=False):
+    reset_map_generator_variables()
     generate_all_wall_fields(x, y)
 
     if not test_mode:
