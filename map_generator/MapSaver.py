@@ -4,7 +4,7 @@ from map_generator import MapGeneratorConfig, Utils
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
 
-def save_game_map(game_map, image=None):
+def save_game_map_and_return_file_name(game_map, image=None):
     current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     parameters = [MapGeneratorConfig.MAP_WIDTH, MapGeneratorConfig.MAP_HEIGHT,
                   MapGeneratorConfig.NUM_OF_CHESTS,
@@ -15,8 +15,10 @@ def save_game_map(game_map, image=None):
 
     game_map_string = Utils.get_string_game_map(game_map)
 
-    print("Saving map to: ", file_name)
+    # print("Saving map to: ", file_name)
     with open(file_name, "w+") as f:
         f.write(game_map_string)
+
+    return file_name.split("/")[1]
 
     # image.save(file_name, "PNG")

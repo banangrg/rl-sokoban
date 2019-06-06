@@ -9,7 +9,7 @@ import arcade
 from map_generator import MapGeneratorConfig, Utils
 from map_generator.BlockType import BlockType
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
-from map_generator.MapSaver import save_game_map
+from map_generator.MapSaver import save_game_map_and_return_file_name
 from map_generator.MovementArrayEnum import MovementArrayEnum
 
 action_type_list = [MapGeneratorPlayerActionEnum.PULL_CHEST, MapGeneratorPlayerActionEnum.CHANGE_SIDE]
@@ -48,15 +48,16 @@ def generate_map(map_width=MapGeneratorConfig.MAP_WIDTH, map_height=MapGenerator
     # move_player_to_point([1, 10])
     drill_map(MapGeneratorConfig.NUM_OF_MOVES)
 
-    save_game_map(game_map)
-    show_view_and_print_game_map()
+
+    # show_view_and_print_game_map()
+    return game_map, save_game_map_and_return_file_name(game_map)
 
 
 def draw_action_type():
     action_num = Utils.weighted_choice_king(
         [x.value for x in action_type_list])
     action_type = action_type_list[action_num]
-    # print(action_type)
+    # # print(action_type)
     return action_type
 
 
@@ -64,10 +65,10 @@ def move_field_leaving_empty(field, movement_array):
     field_type = game_map[field[0]][field[1]]
     new_position = get_field_after_move(field, movement_array)
     if not is_point_inside_map(new_position):
-        print("move_field_leaving_empty: New position outside map! ", new_position)
+        # print("move_field_leaving_empty: New position outside map! ", new_position)
         return field
     elif get_field_type(new_position) == BlockType.CHEST or get_field_type(new_position) == BlockType.CHEST_ON_GOAL:
-        print("Next field is chest!")
+        # print("Next field is chest!")
         return field
     else:
         field_types_to_set = get_block_types_after_move(field_type, get_field_type(new_position))
@@ -84,8 +85,8 @@ def get_block_types_after_move(current_field_type, next_field_type):
             first_field_type = BlockType.PLAYER_ON_GOAL
         elif current_field_type == BlockType.CHEST:
             first_field_type = BlockType.CHEST_ON_GOAL
-        else:
-            print("get_block_types_after_move: Incorrect current_field_type - ", current_field_type)
+        # else:
+            # print("get_block_types_after_move: Incorrect current_field_type - ", current_field_type)
 
     if current_field_type == BlockType.CHEST_ON_GOAL or current_field_type == BlockType.PLAYER_ON_GOAL:
         second_field_type = BlockType.GOAL
@@ -101,7 +102,7 @@ def get_block_types_after_move(current_field_type, next_field_type):
 
 
 def pull_chest():
-    print("Pull chest")
+    # print("Pull chest")
     global player_position
     movement_array = [a - b for a, b in zip(player_position, chest_positions[focus_chest])]
     field_after_move = get_field_after_move(player_position, movement_array)
@@ -111,8 +112,8 @@ def pull_chest():
         player_position = move_field_leaving_empty(player_position, movement_array)
         chest_positions[focus_chest] = move_field_leaving_empty(chest_positions[focus_chest],
                                                                 movement_array)
-    else:
-        print("Can't pull, edge ahead!")
+    # else:
+        # print("Can't pull, edge ahead!")
 
 
 def pick_point_on_side_of_the_chest_to_go_to(chest_num):
@@ -123,7 +124,7 @@ def pick_point_on_side_of_the_chest_to_go_to(chest_num):
             point_type = get_field_type(point)
             if point_type in [BlockType.WALL, BlockType.EMPTY, BlockType.GOAL]:
                 possible_points.append(point)
-    print("Possible points: ", possible_points)
+    # print("Possible points: ", possible_points)
     num = randint(0, len(possible_points) - 1)
     return possible_points[num]
 
@@ -137,7 +138,7 @@ def execute_player_path(moves_permutation):
     for move in moves_permutation:
         new_position = move_field_leaving_empty(player_position, move.value)
         if new_position == player_position:
-            print("Move permutation unsuccessful")
+            # print("Move permutation unsuccessful")
             is_path_successful = False
             break
         else:
@@ -146,15 +147,15 @@ def execute_player_path(moves_permutation):
     if not is_path_successful:
         game_map = copy.deepcopy(game_map_backup)
         player_position = copy.deepcopy(player_position_backup)
-    else:
-        print("Sucessful permutation: ", moves_permutation)
+    # else:
+        # print("Sucessful permutation: ", moves_permutation)
     return is_path_successful
 
 
 def move_player_to_point(point_to_go_to):
-    print("Player position: ", player_position, ";  point_to_go: ", point_to_go_to)
+    # print("Player position: ", player_position, ";  point_to_go: ", point_to_go_to)
     complete_movement_array = [a - b for a, b in zip(point_to_go_to, player_position)]
-    print("complete_movement_array: ", complete_movement_array)
+    # print("complete_movement_array: ", complete_movement_array)
 
     x_direction = MovementArrayEnum.DOWN
     y_direction = MovementArrayEnum.RIGHT
@@ -162,34 +163,34 @@ def move_player_to_point(point_to_go_to):
         x_direction = MovementArrayEnum.UP
     if complete_movement_array[1] < 0:
         y_direction = MovementArrayEnum.LEFT
-    print("x_sign = ", x_direction, "; y_sign = ", y_direction)
+    # print("x_sign = ", x_direction, "; y_sign = ", y_direction)
 
     moves_array = []
     for i in range(0, abs(complete_movement_array[0])):
         moves_array.append(x_direction)
     for i in range(0, abs(complete_movement_array[1])):
         moves_array.append(y_direction)
-    print("moves_array = ", moves_array)
-    print("moves_array length= ", len(moves_array))
+    # print("moves_array = ", moves_array)
+    # print("moves_array length= ", len(moves_array))
 
     # moves_array_permutations = list(itertools.permutations(moves_array))
-    # print("moves_array_permutations = ", moves_array_permutations)
+    # # print("moves_array_permutations = ", moves_array_permutations)
 
     for moves_permutation in set(list(itertools.permutations(moves_array))):
-        Utils.print_enum_list("Executing move permutation:", moves_permutation)
+        # Utils.print_enum_list("Executing move permutation:", moves_permutation)
         is_path_successful = execute_player_path(moves_permutation)
         if is_path_successful:
             break
 
 
 def change_side():
-    print('Change side')
+    # print('Change side')
     point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
     move_player_to_point(point_to_go_to)
 
 
 def go_to_another_chest():
-    print("Go to another chest")
+    # print("Go to another chest")
     global focus_chest
     focus_chest += 1
     point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
@@ -213,10 +214,10 @@ def drill_map(num_of_moves):
     for i in range(0, num_of_moves):
         actions.append(draw_action_type())
     shuffle(actions)
-    Utils.print_enum_list("Actions", actions)
+    # Utils.print_enum_list("Actions", actions)
     for i in range(0, num_of_moves):
         run_action_type(actions[i])
-        Utils.print_game_map(game_map)
+        # Utils.print_game_map(game_map)
 
 
 def generate_chests(num_chests, x, y):
@@ -265,7 +266,7 @@ def get_possible_start_points(chest_position):
         if is_point_inside_map(start_point):
             possible_start_points.append(start_point)
 
-    print("Possible start points:", possible_start_points)
+    # print("Possible start points:", possible_start_points)
     return possible_start_points
 
 
@@ -277,14 +278,14 @@ def get_field_type(position):
     return game_map[position[0]][position[1]]
 
 
-def show_view_and_print_game_map():
-    Utils.print_game_map(game_map)
+# def show_view_and_print_game_map():
+    # Utils.print_game_map(game_map)
     # ArcadeView(game_map)
-    asyncio.run(arcade.run())
+    # asyncio.run(arcade.run())
 
     # arcade_thread = ArcadeThread(game_map)
     # arcade_thread.start()
-    print("sochacki")
+    # print("sochacki")
 
 
 # class ArcadeThread(threading.Thread):
@@ -302,10 +303,10 @@ def init_map(x, y, num_chests, test_mode=False):
 
     if not test_mode:
         generate_chests(num_chests, x, y)
-        print("Chest positions: ", chest_positions)
+        # print("Chest positions: ", chest_positions)
         generate_player()
-        print("Player position: ", player_position)
-    Utils.print_game_map(game_map)
+        # print("Player position: ", player_position)
+    # Utils.print_game_map(game_map)
 
 
 def generate_all_wall_fields(x, y):
