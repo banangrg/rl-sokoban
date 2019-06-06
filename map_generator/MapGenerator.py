@@ -40,14 +40,14 @@ def set_parameters(map_width, map_height, num_of_chests, num_of_moves):
     MapGeneratorConfig.NUM_OF_MOVES = num_of_moves
 
 
-def generate_map(map_width=MapGeneratorConfig.MAP_WIDTH, map_height=MapGeneratorConfig.MAP_HEIGHT, num_of_chests=MapGeneratorConfig.NUM_OF_CHESTS, num_of_moves=MapGeneratorConfig.NUM_OF_MOVES):
+def generate_map(map_width=MapGeneratorConfig.MAP_WIDTH, map_height=MapGeneratorConfig.MAP_HEIGHT,
+                 num_of_chests=MapGeneratorConfig.NUM_OF_CHESTS, num_of_moves=MapGeneratorConfig.NUM_OF_MOVES):
     set_parameters(map_width, map_height, num_of_chests, num_of_moves)
     init_map(MapGeneratorConfig.MAP_WIDTH, MapGeneratorConfig.MAP_HEIGHT, MapGeneratorConfig.NUM_OF_CHESTS)
     # set_testing_player_position(2, 9)
     # set_testing_chest(1, 9)
     # move_player_to_point([1, 10])
     drill_map(MapGeneratorConfig.NUM_OF_MOVES)
-
 
     # show_view_and_print_game_map()
     return game_map, save_game_map_and_return_file_name(game_map)
@@ -86,7 +86,7 @@ def get_block_types_after_move(current_field_type, next_field_type):
         elif current_field_type == BlockType.CHEST:
             first_field_type = BlockType.CHEST_ON_GOAL
         # else:
-            # print("get_block_types_after_move: Incorrect current_field_type - ", current_field_type)
+        # print("get_block_types_after_move: Incorrect current_field_type - ", current_field_type)
 
     if current_field_type == BlockType.CHEST_ON_GOAL or current_field_type == BlockType.PLAYER_ON_GOAL:
         second_field_type = BlockType.GOAL
@@ -113,7 +113,7 @@ def pull_chest():
         chest_positions[focus_chest] = move_field_leaving_empty(chest_positions[focus_chest],
                                                                 movement_array)
     # else:
-        # print("Can't pull, edge ahead!")
+    # print("Can't pull, edge ahead!")
 
 
 def pick_point_on_side_of_the_chest_to_go_to(chest_num):
@@ -148,7 +148,7 @@ def execute_player_path(moves_permutation):
         game_map = copy.deepcopy(game_map_backup)
         player_position = copy.deepcopy(player_position_backup)
     # else:
-        # print("Sucessful permutation: ", moves_permutation)
+    # print("Sucessful permutation: ", moves_permutation)
     return is_path_successful
 
 
@@ -156,6 +156,8 @@ def move_player_to_point(point_to_go_to):
     # print("Player position: ", player_position, ";  point_to_go: ", point_to_go_to)
     complete_movement_array = [a - b for a, b in zip(point_to_go_to, player_position)]
     # print("complete_movement_array: ", complete_movement_array)
+
+
 
     x_direction = MovementArrayEnum.DOWN
     y_direction = MovementArrayEnum.RIGHT
@@ -172,6 +174,8 @@ def move_player_to_point(point_to_go_to):
         moves_array.append(y_direction)
     # print("moves_array = ", moves_array)
     # print("moves_array length= ", len(moves_array))
+    if len(moves_array) > 10:
+        return None
 
     # moves_array_permutations = list(itertools.permutations(moves_array))
     # # print("moves_array_permutations = ", moves_array_permutations)
@@ -181,6 +185,7 @@ def move_player_to_point(point_to_go_to):
         is_path_successful = execute_player_path(moves_permutation)
         if is_path_successful:
             break
+    return True
 
 
 def change_side():
@@ -194,7 +199,9 @@ def go_to_another_chest():
     global focus_chest
     focus_chest += 1
     point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
-    move_player_to_point(point_to_go_to)
+    moving_result = move_player_to_point(point_to_go_to)
+    if moving_result is None:
+        focus_chest -= 1
 
 
 def run_action_type(action_type):
@@ -279,13 +286,13 @@ def get_field_type(position):
 
 
 # def show_view_and_print_game_map():
-    # Utils.print_game_map(game_map)
-    # ArcadeView(game_map)
-    # asyncio.run(arcade.run())
+# Utils.print_game_map(game_map)
+# ArcadeView(game_map)
+# asyncio.run(arcade.run())
 
-    # arcade_thread = ArcadeThread(game_map)
-    # arcade_thread.start()
-    # print("sochacki")
+# arcade_thread = ArcadeThread(game_map)
+# arcade_thread.start()
+# print("sochacki")
 
 
 # class ArcadeThread(threading.Thread):
