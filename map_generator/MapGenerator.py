@@ -47,7 +47,11 @@ def generate_map(map_width=MapGeneratorConfig.MAP_WIDTH, map_height=MapGenerator
     # set_testing_player_position(2, 9)
     # set_testing_chest(1, 9)
     # move_player_to_point([1, 10])
-    drill_map(MapGeneratorConfig.NUM_OF_MOVES)
+    try:
+        drill_map(MapGeneratorConfig.NUM_OF_MOVES)
+    except:
+        # print("Got exception!")
+        return None, None
 
     # show_view_and_print_game_map()
     return game_map, save_game_map_and_return_file_name(game_map)
@@ -157,8 +161,6 @@ def move_player_to_point(point_to_go_to):
     complete_movement_array = [a - b for a, b in zip(point_to_go_to, player_position)]
     # print("complete_movement_array: ", complete_movement_array)
 
-
-
     x_direction = MovementArrayEnum.DOWN
     y_direction = MovementArrayEnum.RIGHT
     if complete_movement_array[0] < 0:
@@ -175,7 +177,8 @@ def move_player_to_point(point_to_go_to):
     # print("moves_array = ", moves_array)
     # print("moves_array length= ", len(moves_array))
     if len(moves_array) > 10:
-        return None
+        # print("Raise exceptions!")
+        raise Exception("moves_array too long: " + len(moves_array))
 
     # moves_array_permutations = list(itertools.permutations(moves_array))
     # # print("moves_array_permutations = ", moves_array_permutations)
@@ -199,9 +202,7 @@ def go_to_another_chest():
     global focus_chest
     focus_chest += 1
     point_to_go_to = pick_point_on_side_of_the_chest_to_go_to(focus_chest)
-    moving_result = move_player_to_point(point_to_go_to)
-    if moving_result is None:
-        focus_chest -= 1
+    move_player_to_point(point_to_go_to)
 
 
 def run_action_type(action_type):
