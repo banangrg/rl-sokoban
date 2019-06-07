@@ -36,6 +36,7 @@ class SokobanEnv(Env):
     USE_MAPS_DIFFICULTY_LEVEL = 2
     USE_MAPS_FROM_FILE = 3
     USE_SINGLE_SPECIFIED_MAP = 4
+    USE_GENERATED_MAPS = 5
 
     # TODO: maybe these dicts need adjusting?
     ACTIONS = {
@@ -106,6 +107,7 @@ class SokobanEnv(Env):
         USE_MAPS_DIFFICULTY_LEVEL = 2  - will use SokobanEnv.GAMES_COUNT_AND_MAP_PREFIXES to determine when to use which maps \n
         USE_MAPS_FROM_FILE = 3 - will use only maps specified in file levels/_specific_maps_selection.txt (specified WITHOUT levels/) \n
         USE_SINGLE_SPECIFIED_MAP = 4 - will use only the map specified in parameter specific_map (specified WITHOUT levels/) \n
+        USE_GENERATED_MAPS = 5 - will use maps generated with map_generator.MapGeneratorg.generate_map
 
         IMPORTANT NOTE: \n
         If window_length of Agent is not equal to 1 than use_more_than_one_channel MUST be set to True!
@@ -374,6 +376,7 @@ class SokobanEnv(Env):
             self.save_game_to_file(print_save_message=False)
 
         # get available maps - according to map selection option defined when creating the env object
+        use_generated_maps_option = False
         if self.map_selection_option == self.USE_MAPS_DIFFICULTY_LEVEL:
             self.available_maps = self.get_available_maps_with_difficulty()
         elif self.map_selection_option == self.USE_ALL_MAPS_ALWAYS:
@@ -384,6 +387,8 @@ class SokobanEnv(Env):
             if not os.path.isfile(SokobanGame.PATH_TO_LEVELS + self.specific_map):
                 raise ValueError("Invalid map name! - specified map does not exist")
             self.available_maps = [self.specific_map]
+        elif self.map_selection_option == self.USE_GENERATED_MAPS:
+            use_generated_maps_option = True
         else:   # default
             self.available_maps = self.get_maps_with_prefix("VERY_SIMPLE")
             self.available_maps.extend(self.get_maps_with_prefix("SIMPLE"))
@@ -406,7 +411,8 @@ class SokobanEnv(Env):
         self.sokoban_game = SokobanGame(chosen_map, rew_impl,
                                         loss_timeout=self.game_timeout,
                                         manual_play=False,
-                                        map_rotation=chosen_rotation)
+                                        map_rotation=chosen_rotation,
+                                        use_generated_maps=use_generated_maps_option)
 
         if self.enable_debug_printing:
             self.debug_print("Reset method call")

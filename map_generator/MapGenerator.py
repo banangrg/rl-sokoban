@@ -1,10 +1,7 @@
-import asyncio
 import copy
 import itertools
 from operator import add
 from random import randint, shuffle
-
-import arcade
 
 from map_generator import MapGeneratorConfig, Utils
 from map_generator.BlockType import BlockType

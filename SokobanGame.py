@@ -5,6 +5,8 @@ import datetime
 import threading
 import numpy as np
 from pynput import keyboard
+from random import randint
+from map_generator.MapGenerator import generate_map
 
 
 # # - wall
@@ -14,7 +16,7 @@ from pynput import keyboard
 # * - box on target
 # @ - player
 # + - player on target
-from map_generator.MapGenerator import generate_map
+
 
 
 class AbstractRewardSystem:
@@ -100,13 +102,34 @@ class SokobanGame:
     PATH_TO_LEVELS = 'levels/'
     PATH_TO_MANUAL_GAMES = 'manual_games/'
 
+    GENERATED_MAP_MIN_DIMENSION = 7
+    GENERATED_MAP_MAX_DIMENSION = 16
+    GENERATED_MAP_MIN_NUM_OF_CHESTS = 1
+    GENERATED_MAP_MAX_NUM_OF_CHESTS = 3
+    GENERATED_MAP_MIN_NUM_OF_MOVES = 15
+    GENERATED_MAP_MAX_NUM_OF_MOVES = 25
+
     def __init__(self, path_to_level: str, reward_impl: AbstractRewardSystem, loss_timeout: int = DEFAULT_TIMEOUT,
-                 manual_play: bool = True, map_rotation: int = MAP_ROTATION_NONE):
+                 manual_play: bool = True, map_rotation: int = MAP_ROTATION_NONE, use_generated_maps: bool = False):
         """ Initializes single game. Requires path to file with level and a reward system (ex. basic RewardSystem()).
-            Does basic validation of loaded level."""
+            Does basic validation of loaded level. \n
+            If use_generated_maps is set then path_to_level will not matter - map will be generated"""
         # load level
-        self.load_level(path_to_level)
-        self.path_to_current_level = path_to_level
+        if use_generated_maps:
+            map_width = randint(self.GENERATED_MAP_MIN_DIMENSION, self.GENERATED_MAP_MAX_DIMENSION + 1)
+            map_height = randint(self.GENERATED_MAP_MIN_DIMENSION, self.GENERATED_MAP_MAX_DIMENSION + 1)
+            num_of_chests = randint(self.GENERATED_MAP_MIN_NUM_OF_CHESTS, self.GENERATED_MAP_MAX_NUM_OF_CHESTS + 1)
+            num_of_moves = randint(self.GENERATED_MAP_MIN_NUM_OF_MOVES, self.GENERATED_MAP_MAX_NUM_OF_MOVES + 1)
+            while self.current_level is None:
+                self.path_to_current_level = 'generated_maps/'
+                temp_map, temp_level_name = generate_map(map_width=map_width, map_height=map_height,
+                                                         num_of_chests=num_of_chests, num_of_moves=num_of_moves)
+                temp_map = self.convert_generated_map_to_numpy_map(temp_map)
+                self.path_to_current_level += temp_level_name
+                self.current_level = temp_map
+        else:
+            self.load_level(path_to_level)
+            self.path_to_current_level = path_to_level
         # basic level  validation
         validation_ok, reason = self.check_loaded_level_basic_validation()
         if not validation_ok:
@@ -165,6 +188,16 @@ class SokobanGame:
         except ValueError:
             print("ERROR - did not find any WALL (" + SokobanGame.WALL + ") in line " + str(line_num))
             raise
+
+    @staticmethod
+    def convert_generated_map_to_numpy_map(list_map):
+        if list_map is None:
+            return None
+        for row in range(len(list_map)):
+            map_row = list_map[row]
+            for col in range(len(map_row)):
+                list_map[row][col] = list_map[row][col].value   # get value from enum object
+        return np.array(list_map)
 
     @staticmethod
     def get_rules():

@@ -8,7 +8,6 @@ from keras.optimizers import Adam
 from rl.agents.dqn import DQNAgent
 from rl.policy import BoltzmannQPolicy, EpsGreedyQPolicy
 from rl.memory import SequentialMemory
-from rl.callbacks import TrainEpisodeLogger, ModelIntervalCheckpoint
 from SokobanEnv import SokobanEnv
 from SokobanGame import SokobanGame
 from MemoryLoader import SokobanManualGameMemoryLoader
@@ -97,17 +96,23 @@ def make_custom_model_2(input_rows, input_cols):
     return custom_model
 
 
-def get_new_sokoban_env(for_test: bool, is_first_training: bool):
+def get_new_sokoban_env(for_test: bool, is_first_training: bool, use_generated_maps: bool):
     SokobanEnv.configure_env_size(new_rows=ENV_SIZE_ROWS, new_cols=ENV_SIZE_COLS)
+    if use_generated_maps:
+        map_choice_option = SokobanEnv.USE_GENERATED_MAPS
+    elif not for_test:
+        map_choice_option = SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL
+    else:
+        map_choice_option = SokobanEnv.USE_MAPS_FROM_FILE
     if not for_test and is_first_training:
-        SokobanEnv.configure_difficulty_games_count_requirement(100, 1000, 2500, 5000)  # to get more maps quicker
+        # SokobanEnv.configure_difficulty_games_count_requirement(100, 1000, 2500, 5000)  # to get more maps quicker
         agent_env = SokobanEnv(game_timeout=SokobanGame.DEFAULT_TIMEOUT,
                                put_map_in_the_center=True,
                                info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
                                use_bugged_dict_entries=False,
                                save_file_name='final_DQN_game_',
                                save_every_game_to_file=SAVE_EVERY_GAME,
-                               map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
+                               map_choice_option=map_choice_option,
                                use_more_than_one_channel=False,
                                scale_rewards=False,
                                scale_range=(-1, 1),
@@ -122,7 +127,7 @@ def get_new_sokoban_env(for_test: bool, is_first_training: bool):
                                use_bugged_dict_entries=False,
                                save_file_name='final_DQN_game_',
                                save_every_game_to_file=SAVE_EVERY_GAME,
-                               map_choice_option=SokobanEnv.USE_MAPS_DIFFICULTY_LEVEL,
+                               map_choice_option=map_choice_option,
                                use_more_than_one_channel=False,
                                scale_rewards=False,
                                scale_range=(-1, 1),
@@ -136,7 +141,7 @@ def get_new_sokoban_env(for_test: bool, is_first_training: bool):
                                use_bugged_dict_entries=False,
                                save_file_name='final_DQN_game_TEST_',
                                save_every_game_to_file=True,        # save every game
-                               map_choice_option=SokobanEnv.USE_MAPS_FROM_FILE,
+                               map_choice_option=map_choice_option,
                                use_more_than_one_channel=False,
                                scale_rewards=False,
                                scale_range=(-1, 1),
@@ -160,6 +165,11 @@ if __name__ == "__main__":
                              action="store_true", dest="is_first_traning")
     args_parser.add_argument("-s", "--save_always", help="if set every game will be saved, default True if --test",
                              action="store_true", dest="save_always")
+    args_parser.add_argument("-l", "--load_manual", help="if set manual games will be loaded to agents memory",
+                             action="store_true", dest="load_manual")
+    args_parser.add_argument("-g", "--generated_maps", help="if set agent will train/test on generated maps. " +
+                                                            "Stats saving is disabled due to not having static map names",
+                             action="store_true", dest="generated_maps")
     args = args_parser.parse_args()
     if args.test_weights != NO_TEST:
         weights_file_name = args.test_weights
@@ -178,16 +188,25 @@ if __name__ == "__main__":
     if args.save_always:
         print("[INFO] Saving EVERY games played by the agent")
         SAVE_EVERY_GAME = True
+    if args.load_manual:
+        DO_LOAD_GAMES_FROM_FILES = True
+    if args.generated_maps:
+        use_generated_maps = True
+    else:
+        use_generated_maps = False
 
     start_time = time.time()
 
     bugfix_processor = DimensionKillerProcessor()
 
-    env = get_new_sokoban_env(for_test=is_test, is_first_training=args.is_first_traning)
+    env = get_new_sokoban_env(for_test=is_test, is_first_training=args.is_first_traning, use_generated_maps=use_generated_maps)
 
     print("[INFO] Building model...")
     model = make_custom_model(input_cols=ENV_SIZE_COLS, input_rows=ENV_SIZE_ROWS)
     model.summary()
+
+    if DO_LOAD_GAMES_FROM_FILES and not is_test:
+        NUMBER_OF_STEPS_FOR_WARMUP = 0      # don't do warmup moves - we already have filled memory
 
     print("[INFO] Building DQNAgent...")
     basic_memory = SequentialMemory(limit=MEMORY_LIMIT, window_length=WINDOW_LENGTH)
@@ -214,7 +233,7 @@ if __name__ == "__main__":
         do_train = True
 
     if DO_LOAD_GAMES_FROM_FILES and do_train:
-        print("[INFO] Loading recored games. Thisa may take a while...")
+        print("[INFO] Loading recorded games. This may take a while...")
         game_record_loader = SokobanManualGameMemoryLoader(agent_memory=basic_memory,
                                                            memory_limit=LOADED_GAMES_MEMORY_LIMIT)
         game_record_loader.load_all_games()
@@ -237,10 +256,12 @@ if __name__ == "__main__":
     print("[INFO] Done...")
     print("Played total of ", env.games_counter, " games")
     print("Won total of ", env.victory_counter, " games")
-    env.print_map_victory_stats()
+    if not use_generated_maps:  # don't print/save stats if using generated maps due to the every generated map having unique name
+        env.print_map_victory_stats()
     print('-' * 50)
 
-    env.save_game_stats_to_file(base_name=str("final_DQN_" + str(TOTAL_NUMBER_OF_STEPS)))
+    if not use_generated_maps:  # don't print/save stats if using generated maps due to the every generated map having unique name
+        env.save_game_stats_to_file(base_name=str("final_DQN_" + str(TOTAL_NUMBER_OF_STEPS)))
     print("Done saving stats")
 
     end_time = time.time()
