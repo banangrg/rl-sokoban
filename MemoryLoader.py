@@ -8,6 +8,7 @@ from SokobanGame import SokobanGame
 class SokobanManualGameMemoryLoader:
     DEFAULT_PATH_TO_GAMES = 'manual_games_to_load/'
     MOVE_SEPARATOR = ';'
+    PRINT_LIMITER = 10000  # once this many steps message will be printed
 
     def __init__(self, agent_memory: Memory, memory_limit: int, path_to_games: str = DEFAULT_PATH_TO_GAMES,
                  is_map_in_center: bool = True, do_scale_rewards: bool = False, do_scale_env: bool = False):
@@ -42,16 +43,20 @@ class SokobanManualGameMemoryLoader:
 
     def load_all_games(self):
         move_counter = 0
+        print_counter = 0
         is_memory_full = False
 
         # load moves into agents memory until specified limit is reached
         while not is_memory_full:
             for file in os.listdir(self.path_to_games):
-                print('Loading file ' + file + ', move counter = ' + str(move_counter) + '/' + str(self.memory_limit))
+                if print_counter >= self.PRINT_LIMITER or print_counter == 0:
+                    print('Loading file ' + file + ', move counter = ' + str(move_counter) + '/' + str(self.memory_limit))
+                    print_counter = 0
                 map_name, moves, _, _, map_rotation = SokobanGame.get_game_from_file(self.path_to_games + file)
 
-                if map_rotation not in SokobanGame.ROTATIONS_ALL:
-                    print("Invalid map rotation! - not a number - skipping")
+                str_rotations_all = [str(rot) for rot in SokobanGame.ROTATIONS_ALL]
+                if map_rotation not in str_rotations_all:
+                    print("Invalid map rotation! - " + str(map_rotation) + " in file " + file + " - skipping")
                     continue
                 map_rotation = int(map_rotation)
                 map_name = map_name.split('/')[1]   # extract only map name without 'levels/'
@@ -73,6 +78,7 @@ class SokobanManualGameMemoryLoader:
                     for move in move_list:
                         # check if memory is full - it would be a waste of time to continue loading when memory is already full
                         move_counter += 1
+                        print_counter += 1
                         if move_counter == self.memory_limit:
                             is_memory_full = True
                             break
