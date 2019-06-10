@@ -105,7 +105,7 @@ def get_new_sokoban_env(for_test: bool, is_first_training: bool, use_generated_m
     else:
         map_choice_option = SokobanEnv.USE_MAPS_FROM_FILE
     if not for_test and is_first_training:
-        # SokobanEnv.configure_difficulty_games_count_requirement(100, 1000, 2500, 5000)  # to get more maps quicker
+        SokobanEnv.configure_difficulty_games_count_requirement(100, 1000, 2500, 5000)  # to get more maps quicker
         agent_env = SokobanEnv(game_timeout=SokobanGame.DEFAULT_TIMEOUT,
                                put_map_in_the_center=True,
                                info_game_count=AFTER_HOW_MANY_GAMES_PRINT_VICTORY_STATS,
