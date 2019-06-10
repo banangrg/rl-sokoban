@@ -485,9 +485,9 @@ class SokobanEnv(Env):
 
     def print_map_victory_stats(self):
         print("Map victory statistics: [map - victories/played games]")
-        for used_map in self.map_frequency_stats:
-            stats_for_used_map = self.get_map_stats_line_for_key(used_map)
-            print(stats_for_used_map)
+        victory_stats_list_sorted = self.get_sorted_map_stats_summary()
+        for line in victory_stats_list_sorted:
+            print(line)
 
     def add_game_stats_entry(self, was_victory: bool):
         """ Data format: level name + '_' + rotation, map rotation, bool - was victory, number of moves, total reward """
@@ -508,10 +508,18 @@ class SokobanEnv(Env):
                 line_to_file = line_to_file[:-1]    # remove last element in line - delimiter
                 f.write(line_to_file + '\n')
         with open(summary_filename, 'w+') as f:  # save stats summary
-            for used_map in self.map_frequency_stats:
-                stats_for_used_map = self.get_map_stats_line_for_key(used_map)
-                f.write(stats_for_used_map + '\n')
+            victory_stats_list_sorted = self.get_sorted_map_stats_summary()
+            for stats_line in victory_stats_list_sorted:
+                f.write(stats_line + '\n')
         return filename, summary_filename
+
+    def get_sorted_map_stats_summary(self):
+        victory_stats_list = []
+        for used_map in self.map_frequency_stats:
+            stats_for_used_map = self.get_map_stats_line_for_key(used_map)
+            victory_stats_list.append(stats_for_used_map)
+        victory_stats_list.sort()
+        return victory_stats_list
 
     def save_game_to_file(self, print_save_message: bool = False):
         save_file_name = self.save_file_name + "_" + str(self.games_counter) + "_episodes_"
