@@ -18,7 +18,6 @@ from map_generator.MapGenerator import generate_map
 # + - player on target
 
 
-
 class AbstractRewardSystem:
     @staticmethod
     def get_reward_for_move():
@@ -115,25 +114,25 @@ class SokobanGame:
             Does basic validation of loaded level. \n
             If use_generated_maps is set then path_to_level will not matter - map will be generated"""
         # load level
+        self.current_level = None
         if use_generated_maps:
             map_width = randint(self.GENERATED_MAP_MIN_DIMENSION, self.GENERATED_MAP_MAX_DIMENSION + 1)
             map_height = randint(self.GENERATED_MAP_MIN_DIMENSION, self.GENERATED_MAP_MAX_DIMENSION + 1)
             num_of_chests = randint(self.GENERATED_MAP_MIN_NUM_OF_CHESTS, self.GENERATED_MAP_MAX_NUM_OF_CHESTS + 1)
             num_of_moves = randint(self.GENERATED_MAP_MIN_NUM_OF_MOVES, self.GENERATED_MAP_MAX_NUM_OF_MOVES + 1)
             while self.current_level is None:
-                self.path_to_current_level = 'generated_maps/'
                 temp_map, temp_level_name = generate_map(map_width=map_width, map_height=map_height,
                                                          num_of_chests=num_of_chests, num_of_moves=num_of_moves)
                 temp_map = self.convert_generated_map_to_numpy_map(temp_map)
-                self.path_to_current_level += temp_level_name
                 self.current_level = temp_map
+            self.path_to_current_level = 'generated_maps/' + temp_level_name
         else:
             self.load_level(path_to_level)
             self.path_to_current_level = path_to_level
-        # basic level  validation
-        validation_ok, reason = self.check_loaded_level_basic_validation()
-        if not validation_ok:
-            raise Exception(reason)
+            # basic level validation
+            validation_ok, reason = self.check_loaded_level_basic_validation()
+            if not validation_ok:
+                raise Exception(reason)
         if not isinstance(reward_impl, AbstractRewardSystem):
             raise Exception("Invalid reward system")
         # assign instance variables
@@ -191,6 +190,9 @@ class SokobanGame:
 
     @staticmethod
     def convert_generated_map_to_numpy_map(list_map):
+        """ Translate map from map_generators generate_map function returning list of lists of Enum objects to 2D numpy
+            array used by this class
+        """
         if list_map is None:
             return None
         for row in range(len(list_map)):
@@ -252,7 +254,7 @@ class SokobanGame:
         player_count += player_on_target_count
         if boxes_not_on_target_count != target_count:
             reason = "VALIDATION FAILED: Number of targets does NOT match number of boxes, boxes: " + str(boxes_not_on_target_count) + \
-                ", targets: " + target_count + " map = " + self.path_to_current_level
+                ", targets: " + str(target_count) + " map = " + self.path_to_current_level
             print(reason)
             return False, reason
         if player_count != 1:

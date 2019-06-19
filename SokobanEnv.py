@@ -28,6 +28,7 @@ class SokobanEnv(Env):
 
     PATH_TO_GAME_STATS = 'game_stats/'
     SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection.txt'
+    #SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection_all_maps.txt'
 
     ENV_DTYPE = 'float32'
 
@@ -60,15 +61,15 @@ class SokobanEnv(Env):
         'S': 3
     }
 
-    MAX_SYMBOL_VALUE = 224.0
+    MAX_SYMBOL_VALUE = 128.0
     SOKOBAN_SYMBOLS_MAPPING_SCALED = {
-        SokobanGame.WALL: 32.0 / MAX_SYMBOL_VALUE,
-        SokobanGame.FREE_SPACE: 0.0 / MAX_SYMBOL_VALUE,
-        SokobanGame.BOX: 96 / MAX_SYMBOL_VALUE,
-        SokobanGame.TARGET: 160 / MAX_SYMBOL_VALUE,
-        SokobanGame.BOX_ON_TARGET: 128 / MAX_SYMBOL_VALUE,
-        SokobanGame.PLAYER: 224 / MAX_SYMBOL_VALUE,
-        SokobanGame.PLAYER_ON_TARGET: 192 / MAX_SYMBOL_VALUE
+        SokobanGame.WALL: -64.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.FREE_SPACE: -32.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.BOX: 32.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.TARGET: 64.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.BOX_ON_TARGET: 0.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.PLAYER: 96.0 / MAX_SYMBOL_VALUE,
+        SokobanGame.PLAYER_ON_TARGET: 128.0 / MAX_SYMBOL_VALUE
     }
     SOKOBAN_SYMBOLS_MAPPING = {
         SokobanGame.WALL            : 0,
@@ -161,8 +162,9 @@ class SokobanEnv(Env):
     @staticmethod
     def get_all_available_maps():
         found_maps = []
+        name_of_file_with_specific_maps = SokobanEnv.SPECIFIC_MAPS_FILE_NAME.split('/')[1]
         for file in os.listdir(SokobanGame.PATH_TO_LEVELS):
-            if file.endswith(".txt"):
+            if file.endswith(".txt") and not file.startswith(name_of_file_with_specific_maps):       # get all maps minus map selection file
                 found_maps.append(file)
         return found_maps
 
