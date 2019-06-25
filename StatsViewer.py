@@ -76,7 +76,7 @@ if __name__ == "__main__":
     args_parser.add_argument("-f", "--stats_file", type=str, help="full path to game_stats file to load",
                              dest="stats_file",
                              default="game_stats/game_stats_dqn_v1_6000000_2019-05-12_04-52-04.txt")
-    args_parser.add_argument("-m", "--map", type=str, help="name of map to show, can be partial",
+    args_parser.add_argument("-m", "--map", type=str, help="name of map to show, can be partial, use all to allow all maps",
                              dest="map_name", default="VERY_SIMPLE_level.txt")
     args_parser.add_argument("-n", "--n_last", type=int,
                              help="number of entries to consider from the end (done before filtering on map name), if negative or 0 - all entries",
@@ -107,6 +107,9 @@ if __name__ == "__main__":
     use_number_of_last_entries = False
     if number_of_last_entries > 0:
         use_number_of_last_entries = True
+
+    if map_name.upper() == 'all'.upper():
+        map_name = ""
 
     if list_maps:
         print("-" * 50)
@@ -166,7 +169,7 @@ if __name__ == "__main__":
     if detailed_figures:
         rewards_points = ax1.scatter(plot_x_values, plot_y_values_rewards, marker='.', color='green')
     ax1.plot(plot_x_values, plot_y_values_rewards, color='green')
-    ax1.axhline(y=0.0, color='r', linestyle='--', linewidth=1.0)
+    ax1.axhline(y=0.0, color='r', linestyle='--', linewidth=0.5)
     ax1.set_title('Rewards')
     ax1.set_ylabel('Reward for episode')
     ax1.set_xlabel('Number of episode')
@@ -175,7 +178,7 @@ if __name__ == "__main__":
     if detailed_figures:
         steps_points = ax2.scatter(plot_x_values, plot_y_values_steps, marker='.', color='blue')
     ax2.plot(plot_x_values, plot_y_values_steps, color='blue')
-    ax2.axhline(y=0.0, color='r', linestyle='--', linewidth=1.0)
+    ax2.axhline(y=0.0, color='r', linestyle='--', linewidth=0.5)
     ax2.set_title('Number of steps for one episode')
     ax2.set_ylabel('Number of steps')
     ax2.set_xlabel('Number of episode')
