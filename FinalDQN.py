@@ -331,7 +331,10 @@ if __name__ == "__main__":
                    processor=bugfix_processor, batch_size=MEMORY_REPLAY_BATCH_SIZE, test_policy=action_choice_policy,
                    enable_double_dqn=True, enable_dueling_network=True, nb_steps_warmup=NUMBER_OF_STEPS_FOR_WARMUP,
                    gamma=GAMMA, target_model_update=10000, train_interval=4, delta_clip=1.)
-    opt = Adam(lr=.00025, clipnorm=1.0)     # clipnorm so that there are no exploding gradients
+    if args.model_type == '3n':
+        opt = Adam(lr=.00025, clipnorm=1.0)  # clipnorm so that there are no exploding gradients
+    else:
+        opt = Adam(lr=.00025)
     dqn.compile(optimizer=opt, metrics=['mae'])
 
     if is_test:

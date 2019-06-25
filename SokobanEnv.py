@@ -27,8 +27,8 @@ class SokobanEnv(Env):
     GAME_SIZE_COLS = 32
 
     PATH_TO_GAME_STATS = 'game_stats/'
-    SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection.txt'
-    #SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection_all_maps.txt'
+    #SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection.txt'
+    SPECIFIC_MAPS_FILE_NAME = 'levels/_specific_maps_selection_all_maps.txt'
 
     ENV_DTYPE = 'float32'
 
@@ -162,7 +162,7 @@ class SokobanEnv(Env):
     @staticmethod
     def get_all_available_maps():
         found_maps = []
-        name_of_file_with_specific_maps = SokobanEnv.SPECIFIC_MAPS_FILE_NAME.split('/')[1]
+        name_of_file_with_specific_maps = SokobanEnv.SPECIFIC_MAPS_FILE_NAME.split('/')[1].split('.')[0]
         for file in os.listdir(SokobanGame.PATH_TO_LEVELS):
             if file.endswith(".txt") and not file.startswith(name_of_file_with_specific_maps):       # get all maps minus map selection file
                 found_maps.append(file)

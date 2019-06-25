@@ -435,7 +435,7 @@ class SokobanGame:
         line 4: total reward received
         line 5: map rotation option - 0 = none, 1 - 90, 2 - 180, 3 - 270
         """
-        map_name = self.path_to_current_level.split('/')[1].split('.')[0]     # map file name without extension assuming path_to_current_level is with directory and file extension
+        map_name = self.path_to_current_level.split('/')[1].replace('.txt', '')     # map file name without extension assuming path_to_current_level is with directory
         current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S.%f')
         filename = self.PATH_TO_MANUAL_GAMES + map_name + "_" + filename + current_date + "." + file_extension
 
