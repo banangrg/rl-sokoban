@@ -1,12 +1,10 @@
 import os
 import re
-import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
 
-STEPS_PER_ENTRY = 10000
 EXCLUDED_FILE_PREFIX = '__'
 CHART_TICK_INTERVAL = 1000
 CHART_2_TICK_INTERVAL = 500
@@ -40,6 +38,9 @@ args_parser.add_argument("-t1", "--tick_1_interval", type=int, help="interval of
 args_parser.add_argument("-t2", "--tick_2_interval", type=int, help="interval of ticks on 2nd chart", dest="ticks_interval_2", default=CHART_2_TICK_INTERVAL)
 args_parser.add_argument("-s", "--steps", help="if set uses steps instead of episodes in x", action="store_true",
                          dest="use_steps")
+args_parser.add_argument("-a", "--alphabetical", help="if set uses alphabetical sort of files instead of by modification time, "
+                                                      "use this option if you will correctly name the files (ex. first one 'a.txt', second 'b.txt', etc.)",
+                         action="store_true", dest="sort_alphabetical")
 args = args_parser.parse_args()
 
 used_files_dir = args.file_path
@@ -51,6 +52,12 @@ ticks_2_interval = args.ticks_interval_2
 
 # load files
 files_to_load = [used_files_dir + file for file in os.listdir(used_files_dir) if not file.startswith(EXCLUDED_FILE_PREFIX)]
+if args.sort_alphabetical:
+    print('Sorting files alphabetically')
+    files_to_load.sort()
+else:
+    print('Sorting files by modification time')
+    files_to_load.sort(key=lambda x: os.path.getmtime(x))
 print('Using files:', files_to_load)
 
 entries = []
