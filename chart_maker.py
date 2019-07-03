@@ -1,13 +1,10 @@
 import os
 import re
-import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
-from stat import S_ISREG, ST_CTIME, ST_MODE
 
 
-STEPS_PER_ENTRY = 10000
 EXCLUDED_FILE_PREFIX = '__'
 CHART_TICK_INTERVAL = 1000
 CHART_2_TICK_INTERVAL = 500
