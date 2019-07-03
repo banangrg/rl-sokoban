@@ -1,0 +1,286 @@
+Training for 500000 steps ...
+Interval 1 (0 steps performed)
+2019-06-19 21:03:08.390044: I tensorflow/stream_executor/dso_loader.cc:152] successfully opened CUDA library cublas64_100.dll locally
+10000/10000 [==============================] - 78s 8ms/step - reward: -0.0090
+151 episodes - episode_reward: -0.589 [-208.800, 45.500] - level_rotation_option: 0.600
+
+Interval 2 (10000 steps performed)
+10000/10000 [==============================] - 71s 7ms/step - reward: -0.1240
+122 episodes - episode_reward: -10.169 [-331.900, 42.400] - level_rotation_option: 0.564
+
+Interval 3 (20000 steps performed)
+10000/10000 [==============================] - 75s 7ms/step - reward: -0.0543
+157 episodes - episode_reward: -3.458 [-580.600, 45.350] - level_rotation_option: 0.383
+
+Interval 4 (30000 steps performed)
+ 4521/10000 [============>.................] - ETA: 46s - reward: -0.1538
+ >>>>>>> 326/500 games won
+ >>>>>>> 326/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[10, 11, 4, 21, 0__500_episodes_2019-06-19_21-07-30.829986.txt
+10000/10000 [==============================] - 82s 8ms/step - reward: -0.0241
+167 episodes - episode_reward: -1.489 [-556.900, 45.200] - level_rotation_option: 0.578
+
+Interval 5 (40000 steps performed)
+10000/10000 [==============================] - 76s 8ms/step - reward: -0.1186
+138 episodes - episode_reward: -8.541 [-627.000, 45.500] - level_rotation_option: 0.552
+
+Interval 6 (50000 steps performed)
+    1/10000 [..............................] - ETA: 6:48 - reward: -0.0500WARNING:tensorflow:From C:\Users\user\AppData\Local\Programs\Python\Python36\lib\site-packages\tensorflow\python\ops\math_ops.py:3066: to_int32 (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Use tf.cast instead.
+WARNING:tensorflow:From C:\Users\user\AppData\Local\Programs\Python\Python36\lib\site-packages\tensorflow\python\ops\math_grad.py:102: div (from tensorflow.python.ops.math_ops) is deprecated and will be removed in a future version.
+Instructions for updating:
+Deprecated in favor of operator or tf.math.divide.
+10000/10000 [==============================] - 918s 92ms/step - reward: -0.0319
+147 episodes - episode_reward: -2.053 [-256.100, 53.450] - loss: 0.846 - mean_absolute_error: 13.736 - mean_q: -13.605 - level_rotation_option: 0.713
+
+Interval 7 (60000 steps performed)
+ 7313/10000 [====================>.........] - ETA: 4:03 - reward: 0.0126
+ >>>>>>> 670/1000 games won
+ >>>>>>> 344/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[11, 17, 3, 21, 0__1000_episodes_2019-06-19_21-35-52.895705.txt
+10000/10000 [==============================] - 906s 91ms/step - reward: -0.0066
+154 episodes - episode_reward: -0.531 [-217.750, 44.800] - loss: 0.692 - mean_absolute_error: 16.336 - mean_q: -17.825 - level_rotation_option: 0.564
+
+Interval 8 (70000 steps performed)
+10000/10000 [==============================] - 899s 90ms/step - reward: -0.1791
+141 episodes - episode_reward: -12.443 [-477.350, 52.850] - loss: 0.860 - mean_absolute_error: 13.169 - mean_q: -12.369 - level_rotation_option: 0.340
+
+Interval 9 (80000 steps performed)
+10000/10000 [==============================] - 905s 90ms/step - reward: -0.0587
+148 episodes - episode_reward: -4.215 [-220.700, 45.800] - loss: 0.786 - mean_absolute_error: 15.155 - mean_q: -15.181 - level_rotation_option: 0.806
+
+Interval 10 (90000 steps performed)
+10000/10000 [==============================] - 913s 91ms/step - reward: -0.1721
+155 episodes - episode_reward: -11.040 [-450.000, 45.150] - loss: 1.047 - mean_absolute_error: 12.414 - mean_q: -9.759 - level_rotation_option: 0.829
+
+Interval 11 (100000 steps performed)
+ 1301/10000 [==>...........................] - ETA: 13:04 - reward: -0.2021
+ >>>>>>> 1008/1500 games won
+ >>>>>>> 338/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[8, 7, 3, 21, 0__1500_episodes_2019-06-19_22-27-10.249554.txt
+10000/10000 [==============================] - 900s 90ms/step - reward: -0.4036
+125 episodes - episode_reward: -31.608 [-507.650, 42.300] - loss: 1.263 - mean_absolute_error: 9.401 - mean_q: -3.028 - level_rotation_option: 0.641
+
+Interval 12 (110000 steps performed)
+10000/10000 [==============================] - 890s 89ms/step - reward: -0.5312
+96 episodes - episode_reward: -55.859 [-465.850, 34.350] - loss: 1.308 - mean_absolute_error: 8.024 - mean_q: 2.305 - level_rotation_option: 0.828
+
+Interval 13 (120000 steps performed)
+10000/10000 [==============================] - 887s 89ms/step - reward: -0.4327
+86 episodes - episode_reward: -50.214 [-355.600, 37.250] - loss: 1.438 - mean_absolute_error: 8.066 - mean_q: 8.222 - level_rotation_option: 0.706
+
+Interval 14 (130000 steps performed)
+10000/10000 [==============================] - 892s 89ms/step - reward: -0.2980
+141 episodes - episode_reward: -21.161 [-627.000, 42.250] - loss: 1.378 - mean_absolute_error: 16.021 - mean_q: -18.508 - level_rotation_option: 0.728
+
+Interval 15 (140000 steps performed)
+ 5281/10000 [==============>...............] - ETA: 7:08 - reward: -0.1104
+ >>>>>>> 1306/2000 games won
+ >>>>>>> 298/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[9, 16, 4, 22, 0__2000_episodes_2019-06-19_23-32-40.665168.txt
+10000/10000 [==============================] - 907s 91ms/step - reward: -0.0915
+149 episodes - episode_reward: -6.502 [-214.000, 45.000] - loss: 1.095 - mean_absolute_error: 12.341 - mean_q: -12.639 - level_rotation_option: 0.538
+
+Interval 16 (150000 steps performed)
+10000/10000 [==============================] - 893s 89ms/step - reward: -0.2586
+115 episodes - episode_reward: -22.335 [-506.850, 45.450] - loss: 1.305 - mean_absolute_error: 11.258 - mean_q: -9.917 - level_rotation_option: 0.399
+
+Interval 17 (160000 steps performed)
+10000/10000 [==============================] - 906s 91ms/step - reward: -0.1008
+155 episodes - episode_reward: -5.183 [-203.800, 45.200] - loss: 1.170 - mean_absolute_error: 12.410 - mean_q: -11.069 - level_rotation_option: 0.585
+
+Interval 18 (170000 steps performed)
+ 9901/10000 [============================>.] - ETA: 8s - reward: 0.0104
+ >>>>>>> 1644/2500 games won
+ >>>>>>> 338/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[17, 13, 3, 20, 0__2500_episodes_2019-06-20_00-24-43.885425.txt
+10000/10000 [==============================] - 905s 90ms/step - reward: 0.0110
+151 episodes - episode_reward: -0.560 [-364.450, 44.700] - loss: 1.039 - mean_absolute_error: 14.034 - mean_q: -12.854 - level_rotation_option: 0.488
+
+Interval 19 (180000 steps performed)
+10000/10000 [==============================] - 903s 90ms/step - reward: -0.1622
+132 episodes - episode_reward: -12.326 [-296.500, 44.300] - loss: 0.989 - mean_absolute_error: 15.104 - mean_q: -14.183 - level_rotation_option: 0.413
+
+Interval 20 (190000 steps performed)
+10000/10000 [==============================] - 898s 90ms/step - reward: -0.0995
+140 episodes - episode_reward: -7.294 [-378.300, 45.250] - loss: 0.889 - mean_absolute_error: 15.516 - mean_q: -14.598 - level_rotation_option: 0.152
+
+Interval 21 (200000 steps performed)
+10000/10000 [==============================] - 900s 90ms/step - reward: -0.2249
+122 episodes - episode_reward: -16.784 [-391.800, 45.200] - loss: 0.944 - mean_absolute_error: 20.229 - mean_q: -23.290 - level_rotation_option: 0.605
+
+Interval 22 (210000 steps performed)
+ 6989/10000 [===================>..........] - ETA: 4:32 - reward: -0.1589
+ >>>>>>> 1966/3000 games won
+ >>>>>>> 322/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[7, 13, 1, 18, 0__3000_episodes_2019-06-20_01-20-26.532199.txt
+10000/10000 [==============================] - 905s 91ms/step - reward: -0.1942
+150 episodes - episode_reward: -14.285 [-538.500, 45.300] - loss: 0.970 - mean_absolute_error: 19.971 - mean_q: -22.112 - level_rotation_option: 0.831
+
+Interval 23 (220000 steps performed)
+10000/10000 [==============================] - 907s 91ms/step - reward: -0.1084
+146 episodes - episode_reward: -7.205 [-243.500, 50.000] - loss: 1.382 - mean_absolute_error: 16.133 - mean_q: -14.168 - level_rotation_option: 0.753
+
+Interval 24 (230000 steps performed)
+10000/10000 [==============================] - 899s 90ms/step - reward: -0.4129
+121 episodes - episode_reward: -34.396 [-500.950, 45.700] - loss: 1.252 - mean_absolute_error: 15.972 - mean_q: -13.807 - level_rotation_option: 0.373
+
+Interval 25 (240000 steps performed)
+10000/10000 [==============================] - 902s 90ms/step - reward: -0.2496
+121 episodes - episode_reward: -20.502 [-273.000, 44.850] - loss: 1.305 - mean_absolute_error: 22.416 - mean_q: -26.504 - level_rotation_option: 0.581
+
+Interval 26 (250000 steps performed)
+ 4385/10000 [============>.................] - ETA: 8:25 - reward: -0.2797
+ >>>>>>> 2289/3500 games won
+ >>>>>>> 323/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[12, 9, 3, 24, 0__3500_episodes_2019-06-20_02-16-42.067071.txt
+10000/10000 [==============================] - 903s 90ms/step - reward: -0.2932
+157 episodes - episode_reward: -18.724 [-568.800, 45.150] - loss: 1.233 - mean_absolute_error: 19.868 - mean_q: -21.526 - level_rotation_option: 0.604
+
+Interval 27 (260000 steps performed)
+10000/10000 [==============================] - 906s 91ms/step - reward: 0.0186
+178 episodes - episode_reward: 1.960 [-585.700, 45.350] - loss: 1.042 - mean_absolute_error: 21.565 - mean_q: -24.152 - level_rotation_option: 0.078
+
+Interval 28 (270000 steps performed)
+10000/10000 [==============================] - 908s 91ms/step - reward: -0.2197
+172 episodes - episode_reward: -11.958 [-568.000, 52.850] - loss: 1.062 - mean_absolute_error: 21.650 - mean_q: -23.603 - level_rotation_option: 0.628
+
+Interval 29 (280000 steps performed)
+ 3857/10000 [==========>...................] - ETA: 9:12 - reward: -0.1385
+ >>>>>>> 2630/4000 games won
+ >>>>>>> 341/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[7, 13, 1, 20, 0__4000_episodes_2019-06-20_03-01-11.014509.txt
+10000/10000 [==============================] - 896s 90ms/step - reward: -0.2847
+126 episodes - episode_reward: -24.723 [-609.300, 44.700] - loss: 1.846 - mean_absolute_error: 15.095 - mean_q: -9.282 - level_rotation_option: 0.516
+
+Interval 30 (290000 steps performed)
+10000/10000 [==============================] - 904s 90ms/step - reward: -0.2483
+142 episodes - episode_reward: -17.714 [-525.350, 42.100] - loss: 1.333 - mean_absolute_error: 20.384 - mean_q: -21.125 - level_rotation_option: 0.424
+
+Interval 31 (300000 steps performed)
+10000/10000 [==============================] - 903s 90ms/step - reward: -0.2370
+157 episodes - episode_reward: -12.803 [-627.000, 42.350] - loss: 1.252 - mean_absolute_error: 18.744 - mean_q: -17.676 - level_rotation_option: 0.512
+
+Interval 32 (310000 steps performed)
+ 7745/10000 [======================>.......] - ETA: 3:24 - reward: -0.1380
+ >>>>>>> 2959/4500 games won
+ >>>>>>> 329/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[16, 16, 1, 24, 0__4500_episodes_2019-06-20_03-52-10.319598.txt
+10000/10000 [==============================] - 909s 91ms/step - reward: -0.1640
+167 episodes - episode_reward: -10.951 [-483.250, 48.750] - loss: 1.474 - mean_absolute_error: 16.111 - mean_q: -11.116 - level_rotation_option: 0.254
+
+Interval 33 (320000 steps performed)
+10000/10000 [==============================] - 910s 91ms/step - reward: -0.0790
+164 episodes - episode_reward: -5.899 [-548.150, 53.300] - loss: 1.158 - mean_absolute_error: 18.106 - mean_q: -16.174 - level_rotation_option: 0.710
+
+Interval 34 (330000 steps performed)
+10000/10000 [==============================] - 904s 90ms/step - reward: -0.1405
+152 episodes - episode_reward: -9.308 [-436.750, 45.000] - loss: 1.731 - mean_absolute_error: 13.728 - mean_q: -5.164 - level_rotation_option: 0.650
+
+Interval 35 (340000 steps performed)
+10000/10000 [==============================] - 901s 90ms/step - reward: -0.2650
+131 episodes - episode_reward: -19.838 [-535.550, 42.250] - loss: 1.647 - mean_absolute_error: 13.047 - mean_q: -2.955 - level_rotation_option: 0.361
+
+Interval 36 (350000 steps performed)
+ 2309/10000 [=====>........................] - ETA: 11:30 - reward: -0.3741
+ >>>>>>> 3297/5000 games won
+ >>>>>>> 338/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[11, 11, 1, 25, 0__5000_episodes_2019-06-20_04-44-17.571080.txt
+10000/10000 [==============================] - 901s 90ms/step - reward: -0.2540
+109 episodes - episode_reward: -23.471 [-273.800, 52.500] - loss: 1.612 - mean_absolute_error: 12.381 - mean_q: -1.160 - level_rotation_option: 0.731
+
+Interval 37 (360000 steps performed)
+10000/10000 [==============================] - 892s 89ms/step - reward: -0.3359
+113 episodes - episode_reward: -29.817 [-415.400, 37.950] - loss: 1.567 - mean_absolute_error: 13.167 - mean_q: -2.806 - level_rotation_option: 0.358
+
+Interval 38 (370000 steps performed)
+10000/10000 [==============================] - 898s 90ms/step - reward: -0.4032
+110 episodes - episode_reward: -36.688 [-545.200, 40.850] - loss: 1.960 - mean_absolute_error: 11.374 - mean_q: 4.545 - level_rotation_option: 0.155
+
+Interval 39 (380000 steps performed)
+10000/10000 [==============================] - 890s 89ms/step - reward: -0.3786
+96 episodes - episode_reward: -39.440 [-489.150, 34.950] - loss: 1.557 - mean_absolute_error: 11.405 - mean_q: 3.581 - level_rotation_option: 0.094
+
+Interval 40 (390000 steps performed)
+ 8557/10000 [========================>.....] - ETA: 2:08 - reward: -0.3026
+ >>>>>>> 3601/5500 games won
+ >>>>>>> 304/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[11, 8, 2, 21, 0__5500_episodes_2019-06-20_05-53-15.291782.txt
+10000/10000 [==============================] - 895s 90ms/step - reward: -0.2992
+113 episodes - episode_reward: -26.494 [-581.850, 44.750] - loss: 1.518 - mean_absolute_error: 12.476 - mean_q: 0.282 - level_rotation_option: 0.000
+
+Interval 41 (400000 steps performed)
+10000/10000 [==============================] - 890s 89ms/step - reward: -0.3127
+89 episodes - episode_reward: -35.138 [-336.550, 45.550] - loss: 1.540 - mean_absolute_error: 12.263 - mean_q: 1.397 - level_rotation_option: 0.533
+
+Interval 42 (410000 steps performed)
+10000/10000 [==============================] - 905s 91ms/step - reward: -0.2762
+100 episodes - episode_reward: -26.778 [-248.050, 44.800] - loss: 1.520 - mean_absolute_error: 13.274 - mean_q: -2.285 - level_rotation_option: 0.469
+
+Interval 43 (420000 steps performed)
+10000/10000 [==============================] - 891s 89ms/step - reward: -0.3505
+102 episodes - episode_reward: -34.669 [-554.850, 44.250] - loss: 2.178 - mean_absolute_error: 13.637 - mean_q: -1.615 - level_rotation_option: 0.618
+
+Interval 44 (430000 steps performed)
+10000/10000 [==============================] - 908s 91ms/step - reward: -0.2556
+135 episodes - episode_reward: -19.316 [-326.000, 38.000] - loss: 3.885 - mean_absolute_error: 19.013 - mean_q: -18.088 - level_rotation_option: 0.378
+
+Interval 45 (440000 steps performed)
+ 3709/10000 [==========>...................] - ETA: 9:35 - reward: -0.2874
+ >>>>>>> 3906/6000 games won
+ >>>>>>> 305/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[15, 17, 4, 18, 0__6000_episodes_2019-06-20_07-01-00.564123.txt
+10000/10000 [==============================] - 915s 92ms/step - reward: -0.1192
+170 episodes - episode_reward: -6.880 [-330.650, 45.500] - loss: 3.050 - mean_absolute_error: 21.101 - mean_q: -22.869 - level_rotation_option: 0.286
+
+Interval 46 (450000 steps performed)
+10000/10000 [==============================] - 915s 92ms/step - reward: -0.0465
+191 episodes - episode_reward: -2.525 [-296.500, 45.700] - loss: 3.043 - mean_absolute_error: 21.958 - mean_q: -23.592 - level_rotation_option: 0.604
+
+Interval 47 (460000 steps performed)
+10000/10000 [==============================] - 900s 90ms/step - reward: -0.1543
+159 episodes - episode_reward: -9.201 [-532.500, 49.550] - loss: 2.855 - mean_absolute_error: 22.260 - mean_q: -24.031 - level_rotation_option: 0.699
+
+Interval 48 (470000 steps performed)
+ 2341/10000 [======>.......................] - ETA: 11:34 - reward: -0.1531
+ >>>>>>> 4251/6500 games won
+ >>>>>>> 345/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[9, 7, 3, 22, 0__6500_episodes_2019-06-20_07-44-23.280582.txt
+10000/10000 [==============================] - 907s 91ms/step - reward: -0.0773
+166 episodes - episode_reward: -5.011 [-576.850, 45.450] - loss: 3.156 - mean_absolute_error: 23.098 - mean_q: -24.498 - level_rotation_option: 0.138
+
+Interval 49 (480000 steps performed)
+10000/10000 [==============================] - 918s 92ms/step - reward: 0.0686
+201 episodes - episode_reward: 3.327 [-329.850, 53.050] - loss: 3.146 - mean_absolute_error: 24.276 - mean_q: -26.441 - level_rotation_option: 0.239
+
+Interval 50 (490000 steps performed)
+ 7121/10000 [====================>.........] - ETA: 4:27 - reward: 0.1107
+ >>>>>>> 4608/7000 games won
+ >>>>>>> 357/500 games won in this logging period
+ >>>>>>> number of maps for training: 27
+Saving current game to file: manual_games/[17, 10, 1, 20, 0__7000_episodes_2019-06-20_08-22-18.158289.txt
+10000/10000 [==============================] - 930s 93ms/step - reward: 0.1110
+done, took 41017.547 seconds
+Saving dqn weights and stats
+Done saving dqn weights
+--------------------------------------------------
+[INFO] Done...
+Played total of  7068  games
+Won total of  4655  games
+--------------------------------------------------
+Done saving stats
+ >>>>>> ALL DONE. It took 41022.037731170654 seconds = 683.7006288528443 minutes = 11.395010480880737 hours
