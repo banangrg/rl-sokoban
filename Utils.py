@@ -112,6 +112,15 @@ def get_input_moves_list_starting_with(folder_name, level_name):
     return inputs_list, rotations
 
 
+def get_input_moves_and_rotation_from_file(folder_name, level_name):
+    level_name += ".txt"
+    inputs_list = []
+    rotations = []
+    inputs_list.append(read_line_of_file(folder_name + "\\" + level_name, 1))
+    rotations.append(int(read_line_of_file(folder_name + "\\" + level_name, 4)))
+    return inputs_list, rotations
+
+
 def print_game_map(game_map):
     for row in game_map:
         for column in row:
