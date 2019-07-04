@@ -41,6 +41,7 @@ args_parser.add_argument("-s", "--steps", help="if set uses steps instead of epi
 args_parser.add_argument("-a", "--alphabetical", help="if set uses alphabetical sort of files instead of by modification time, "
                                                       "use this option if you will correctly name the files (ex. first one 'a.txt', second 'b.txt', etc.)",
                          action="store_true", dest="sort_alphabetical")
+args_parser.add_argument("-n", "--n_limit", type=int, help="limit the number of episodes/steps to plot, must be > 0", dest="n_limit", default=-0)
 args = args_parser.parse_args()
 
 used_files_dir = args.file_path
@@ -49,6 +50,10 @@ ticks_font_size = args.ticks_font_size
 values_to_plot = args.values
 ticks_1_interval = args.ticks_interval_1
 ticks_2_interval = args.ticks_interval_2
+if args.n_limit > 0:
+    n_limiter = args.n_limit
+else:
+    n_limiter = 0
 
 # load files
 files_to_load = [used_files_dir + file for file in os.listdir(used_files_dir) if not file.startswith(EXCLUDED_FILE_PREFIX)]
@@ -93,6 +98,11 @@ q_avg = []
 for entry in entries:
     current_episodes_counter += int(re.findall(EPISODE_REGEX, entry)[0])
     current_steps_counter += int(re.findall(STEPS_PER_ENTRY_REGEX, entry)[0])
+    # check n_limiter
+    if n_limiter > 0 and args.use_steps and current_steps_counter > n_limiter:
+        break
+    elif n_limiter > 0 and not args.use_steps and current_episodes_counter > n_limiter:
+        break
     episodes_counters.append(current_episodes_counter)
     steps_counters.append(current_steps_counter)
     episode_rewards_avg.append(float(re.findall(EPISODE_AVG_REWARD_REGEX, entry)[0]))
@@ -152,7 +162,7 @@ for item in lists_to_plot:
             ticks_1_interval = 50000
     else:
         x_to_use = episodes_counters
-        ticks_range = np.arange(min(steps_counters), max(steps_counters) + 1, ticks_1_interval)
+        ticks_range = np.arange(min(episodes_counters), max(episodes_counters) + 1, ticks_1_interval)
         if item[_uses_different_x]:
             x_to_use = episodes_counters_not_full
 
