@@ -1,13 +1,10 @@
-import asyncio
-import copy
-import threading
 import time
 
 import arcade
 
 import SobParams as SobParams
-import Utils
-from BlockType import BlockType
+from map_generator import Utils
+from map_generator.BlockType import BlockType
 from MoveEnum import MoveEnum
 
 

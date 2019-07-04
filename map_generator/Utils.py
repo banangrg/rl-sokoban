@@ -6,7 +6,7 @@ from numpy import array
 import numpy
 
 import SobParams as SobParams
-from BlockType import BlockType
+from map_generator.BlockType import BlockType
 
 
 def generate_example_map():

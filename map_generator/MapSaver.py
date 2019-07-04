@@ -1,7 +1,6 @@
 import datetime
 
-import Utils
-from map_generator import MapGeneratorConfig
+from map_generator import MapGeneratorConfig, Utils
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 
 

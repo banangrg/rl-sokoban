@@ -7,10 +7,9 @@ from operator import add
 import arcade
 
 import SobParams as SobParams
-import Utils
-from ArcadeView import ArcadeView
+from map_generator import Utils
 from ArcadeViewListener import ArcadeViewListener
-from BlockType import BlockType
+from map_generator.BlockType import BlockType
 from MoveEnum import MoveEnum
 from RecordSaver import RecordSaver
 from RewardDict import RewardDict

@@ -1,10 +1,8 @@
-from SokobanGameEngine import SokobanGameEngine
 import sys
 
-import SobParams as cs
-import Utils
+from map_generator import Utils
 from RecordSaver import RecordSaver
-from SokobanGameEngine import SokobanGameEngine
+from map_generator.SokobanGameEngine import SokobanGameEngine
 
 class InputManager:
 

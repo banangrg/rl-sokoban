@@ -1,16 +1,13 @@
 import asyncio
 import copy
 import itertools
-import threading
 from operator import add
 from random import randint, shuffle
 
 import arcade
 
-import Utils
-from ArcadeView import ArcadeView
-from BlockType import BlockType
-from map_generator import MapGeneratorConfig
+from map_generator import MapGeneratorConfig, Utils
+from map_generator.BlockType import BlockType
 from map_generator.MapGeneratorPlayerActionEnum import MapGeneratorPlayerActionEnum
 from map_generator.MapSaver import save_game_map
 from map_generator.MovementArrayEnum import MovementArrayEnum
@@ -36,7 +33,15 @@ def set_testing_chest(x, y):
     chest_positions.append([x, y])
 
 
-def generate_map():
+def set_parameters(map_width, map_height, num_of_chests, num_of_moves):
+    MapGeneratorConfig.MAP_WIDTH = map_width
+    MapGeneratorConfig.MAP_HEIGHT = map_height
+    MapGeneratorConfig.NUM_OF_CHESTS = num_of_chests
+    MapGeneratorConfig.NUM_OF_MOVES = num_of_moves
+
+
+def generate_map(map_width, map_height, num_of_chests, num_of_moves):
+    set_parameters(map_width, map_height, num_of_chests, num_of_moves)
     init_map(MapGeneratorConfig.MAP_WIDTH, MapGeneratorConfig.MAP_HEIGHT, MapGeneratorConfig.NUM_OF_CHESTS)
     # set_testing_player_position(2, 9)
     # set_testing_chest(1, 9)
@@ -274,7 +279,7 @@ def get_field_type(position):
 
 def show_view_and_print_game_map():
     Utils.print_game_map(game_map)
-    ArcadeView(game_map)
+    # ArcadeView(game_map)
     asyncio.run(arcade.run())
 
     # arcade_thread = ArcadeThread(game_map)
@@ -282,14 +287,14 @@ def show_view_and_print_game_map():
     print("sochacki")
 
 
-class ArcadeThread(threading.Thread):
-    def __init__(self, game_map):
-        super(ArcadeThread, self).__init__()
-        self.game_map = game_map
-
-    def run(self):
-        ArcadeView(self.game_map)
-        arcade.run()
+# class ArcadeThread(threading.Thread):
+#     def __init__(self, game_map):
+#         super(ArcadeThread, self).__init__()
+#         self.game_map = game_map
+#
+#     def run(self):
+#         ArcadeView(self.game_map)
+#         arcade.run()
 
 
 def init_map(x, y, num_chests, test_mode=False):
