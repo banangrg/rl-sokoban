@@ -14,7 +14,8 @@ from SokobanEnv import SokobanEnv
 from SokobanGame import SokobanGame
 from MemoryLoader import SokobanManualGameMemoryLoader
 from DQNAgentUtils import DimensionKillerProcessor
-from DQNAgentUtils import save_agent_weights_and_summary_to_file, show_reward_plot, load_agent_weights, PATH_TO_SAVED_MODELS
+from DQNAgentUtils import save_agent_weights_and_summary_to_file, show_reward_plot, load_agent_weights, \
+    PATH_TO_SAVED_MODELS, load_optimizer_from_file
 
 
 # to use BatchNormalization with channels_first this commit is needed to be added manually:
@@ -22,6 +23,7 @@ from DQNAgentUtils import save_agent_weights_and_summary_to_file, show_reward_pl
 
 
 NO_TEST = '__no_test__'
+NO_OPTIMIZER = '__no_optimizer__'
 NO_STEPS_SPECIFIED = -1
 
 NUMBER_OF_POSSIBLE_ACTIONS = 4
@@ -273,6 +275,10 @@ if __name__ == "__main__":
                              help="type of loaded model 1 - default, 2 diffconv, 2n diffconv with batch normalization, 3n - final network",
                              choices=['1', '2', '2n', '3n'],
                              dest="model_type", default='3n')
+    args_parser.add_argument("-o", "--optimizer", type=str,
+                             help="file name of file with optimizer object to load",
+                             dest="optimizer", default=NO_OPTIMIZER)
+    args_parser.add_argument("--relu", help="if set will use relu activation function", action="store_true", dest="use_relu")
     args = args_parser.parse_args()
     if args.test_weights != NO_TEST:
         weights_file_name = args.test_weights
@@ -297,6 +303,8 @@ if __name__ == "__main__":
         use_generated_maps = True
     else:
         use_generated_maps = False
+    if args.use_relu:
+        HIDDEN_ACTIVATION = 'relu'
 
     start_time = time.time()
 
@@ -331,10 +339,15 @@ if __name__ == "__main__":
                    processor=bugfix_processor, batch_size=MEMORY_REPLAY_BATCH_SIZE, test_policy=action_choice_policy,
                    enable_double_dqn=True, enable_dueling_network=True, nb_steps_warmup=NUMBER_OF_STEPS_FOR_WARMUP,
                    gamma=GAMMA, target_model_update=10000, train_interval=4, delta_clip=1.)
-    if args.model_type == '3n':
-        opt = Adam(lr=.00025, clipnorm=1.0)  # clipnorm so that there are no exploding gradients
+    if args.optimizer != NO_OPTIMIZER:
+        print('Loading optimizer from ' + args.optimizer)
+        opt = load_optimizer_from_file(args.optimizer)
     else:
-        opt = Adam(lr=.00025)
+        print('Using new optimizer object')
+        if args.model_type == '3n':
+            opt = Adam(lr=.00025, clipnorm=1.0)  # clipnorm so that there are no exploding gradients
+        else:
+            opt = Adam(lr=.00025)
     dqn.compile(optimizer=opt, metrics=['mae'])
 
     if is_test:
@@ -370,7 +383,7 @@ if __name__ == "__main__":
         print("Saving dqn weights and stats")
         save_agent_weights_and_summary_to_file(base_file_name="final_DQN_",
                                                number_of_steps_run=TOTAL_NUMBER_OF_STEPS,
-                                               agent_to_save=dqn, used_model=model)
+                                               agent_to_save=dqn, used_model=model, used_optimizer=opt)
         print("Done saving dqn weights")
     else:   # test
         print("[INFO] Testing on maps specified in file " + SokobanEnv.SPECIFIC_MAPS_FILE_NAME)
