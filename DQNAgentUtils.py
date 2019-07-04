@@ -1,4 +1,5 @@
 import os
+import joblib
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,6 +8,7 @@ from rl.core import Processor
 # Functions and classes common for DQN agents
 
 PATH_TO_SAVED_MODELS = "trained_models/"
+OPTIMIZER_EXTENSION = '.joblib'
 
 # to check nvidia usage:
 # cmd
@@ -34,7 +36,7 @@ class DimensionKillerProcessor(Processor):
         return np.squeeze(batch, axis=1)
 
 
-def save_agent_weights_and_summary_to_file(base_file_name: str, number_of_steps_run: int, agent_to_save, used_model):
+def save_agent_weights_and_summary_to_file(base_file_name: str, number_of_steps_run: int, agent_to_save, used_model, used_optimizer=None):
     current_date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     filename_base = PATH_TO_SAVED_MODELS + base_file_name + "_" + str(number_of_steps_run) + "_steps_" + current_date
     model_desc_filename = filename_base + "_model_summary.txt"
@@ -47,6 +49,11 @@ def save_agent_weights_and_summary_to_file(base_file_name: str, number_of_steps_
 
     agent_to_save.save_weights(weights_filename)
 
+    if used_optimizer is not None:
+        optimizer_file_path = PATH_TO_SAVED_MODELS + base_file_name + "_optimizer_" + type(used_optimizer).__name__ + \
+                              "_steps_" + current_date + OPTIMIZER_EXTENSION
+        joblib.dump(used_optimizer, optimizer_file_path)
+
 
 def load_agent_weights(agent_obj, weights_file_path):
     if os.path.isfile(weights_file_path):
@@ -56,6 +63,11 @@ def load_agent_weights(agent_obj, weights_file_path):
         msg = "ERROR! Weights file not found at given location: " + weights_file_path
         print(msg)
         raise ValueError(msg)
+
+
+def load_optimizer_from_file(file_path):
+    loaded_optimizer = joblib.load(file_path)
+    return loaded_optimizer
 
 
 def show_reward_plot(training_history, plot_title: str, plot_nb_episode_steps: bool = False):
