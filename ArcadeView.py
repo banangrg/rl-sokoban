@@ -19,6 +19,9 @@ class ArcadeView(arcade.Window):
 
         self.game_map = game_map
         self.listeners = []
+        self.textures = {}
+
+        self.load_textures()
         self.restart()
 
         arcade.start_render()
@@ -28,6 +31,16 @@ class ArcadeView(arcade.Window):
     #     Utils.set_width_and_height(self.game_map)
     #     # super().on_resize(SobParams.WINDOW_HEIGHT, SobParams.WINDOW_WIDTH)
     #     super().on_resize(600, 600)
+
+    def load_textures(self):
+        pass
+        self.textures[BlockType.PLAYER] = arcade.load_texture("textures/Character4.png")
+        self.textures[BlockType.CHEST] = arcade.load_texture("textures/Crate_Brown.png")
+        self.textures[BlockType.CHEST_ON_GOAL] = arcade.load_texture("textures/Crate_Red.png")
+        self.textures[BlockType.GOAL] = arcade.load_texture("textures/EndPoint_Red.png")
+        self.textures[BlockType.EMPTY] = arcade.load_texture("textures/GroundGravel_Sand.png")
+        self.textures[BlockType.WALL] = arcade.load_texture("textures/Wall_Black.png")
+        self.textures[BlockType.PLAYER_ON_GOAL] = arcade.load_texture("textures/Character4.png")
 
     def on_draw(self):
         self.draw_map(self.game_map)
@@ -56,9 +69,9 @@ class ArcadeView(arcade.Window):
             listener.make_a_move(key)
 
     def draw_field_at(self, x, y, block_type):
-        arcade.draw_xywh_rectangle_filled(y * SobParams.FIELD_WIDTH, x * SobParams.FIELD_HEIGHT, SobParams.FIELD_WIDTH,
-                                          SobParams.FIELD_HEIGHT,
-                                          block_type.get_color())
+        arcade.draw_xywh_rectangle_textured(y * SobParams.FIELD_WIDTH, x * SobParams.FIELD_HEIGHT,
+                                            SobParams.FIELD_WIDTH,
+                                            SobParams.FIELD_HEIGHT, self.textures[block_type])
 
     def draw_map(self, game_map):
         # game_map = self.draw_all_walls()
